@@ -1,4 +1,4 @@
-package interpreter
+package token
 
 import "fmt"
 
