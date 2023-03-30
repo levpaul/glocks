@@ -4,7 +4,27 @@ import (
 	"fmt"
 	"github.com/levpaul/glocks/internal/token"
 	"go.uber.org/zap"
+	"strconv"
 )
+
+var keywordMap = map[string]token.TokenType{
+	"and":    token.AND,
+	"class":  token.CLASS,
+	"else":   token.ELSE,
+	"false":  token.FALSE,
+	"fun":    token.FUN,
+	"for":    token.FOR,
+	"if":     token.IF,
+	"nil":    token.NIL,
+	"or":     token.OR,
+	"print":  token.PRINT,
+	"return": token.RETURN,
+	"super":  token.SUPER,
+	"this":   token.THIS,
+	"true":   token.TRUE,
+	"var":    token.VAR,
+	"while":  token.WHILE,
+}
 
 type Scanner struct {
 	source string
@@ -94,9 +114,56 @@ func (s *Scanner) scanToken() error {
 	case '"':
 		s.scanString()
 	default:
-		return fmt.Errorf("unexpected character '%s' at line %d", r, s.line)
+		switch {
+		case isDigit(r):
+			if err := s.scanNumber(); err != nil {
+				return err
+			}
+		case isAlpha(r):
+			s.scanIdentifier()
+		default:
+			return fmt.Errorf("unexpected character '%s' at line %d", r, s.line)
+		}
 	}
 
+	return nil
+}
+
+func (s *Scanner) scanIdentifier() {
+	for isAlpha(s.peek()) { // scan through initial digits
+		s.advance()
+	}
+	identifier := s.source[s.start:s.current]
+
+	tt, ok := keywordMap[identifier]
+	if !ok {
+		tt = token.IDENTIFIER
+	}
+	s.addToken(tt)
+}
+
+func (s *Scanner) scanNumber() error {
+	for isDigit(s.peek()) { // scan through initial digits
+		s.advance()
+	}
+
+	if s.peek() == '.' {
+		s.advance()
+		if isDigit(s.peek()) {
+			s.advance()
+			for isDigit(s.peek()) { // scan through decimal digits
+				s.advance()
+			}
+		} else {
+			return fmt.Errorf("invalid number detected at line %d", s.line)
+		}
+	}
+
+	val, err := strconv.ParseFloat(s.source[s.start:s.current], 64)
+	if err != nil {
+		return fmt.Errorf("error converting number to float - %w", err)
+	}
+	s.addLiteralToken(token.NUMBER, val)
 	return nil
 }
 
@@ -117,6 +184,14 @@ func (s *Scanner) peek() rune {
 		return 0
 	}
 	return rune(s.source[s.current])
+}
+
+// Returns rune from source at current index + 1, without advancing the index
+func (s *Scanner) peekNext() rune {
+	if s.current+1 >= len(s.source) {
+		return 0
+	}
+	return rune(s.source[s.current+1])
 }
 
 // match retuns a bool based on whether the next character in the source matches the given r.
@@ -168,4 +243,12 @@ func (s *Scanner) advance() rune {
 
 func (s *Scanner) isAtEnd() bool {
 	return s.current >= len(s.source)
+}
+
+func isAlpha(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+}
+
+func isDigit(r rune) bool {
+	return r >= '0' && r <= '9'
 }
