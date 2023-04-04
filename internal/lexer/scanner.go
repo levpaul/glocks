@@ -122,7 +122,7 @@ func (s *Scanner) scanToken() error {
 		case isAlpha(r):
 			s.scanIdentifier()
 		default:
-			return fmt.Errorf("unexpected character '%s' at line %d", r, s.line)
+			return fmt.Errorf("unexpected character '%c' at line %d", r, s.line)
 		}
 	}
 
