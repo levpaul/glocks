@@ -55,8 +55,8 @@ func TestRawTokensSuccess(t *testing.T) {
 					Literal: 2,
 				},
 				{
-					Type:   lexer.OR,
-					Lexeme: "||",
+					Type:   lexer.LESS_EQUAL,
+					Lexeme: "<=",
 				},
 				{
 					Type:    lexer.NUMBER,
@@ -103,8 +103,7 @@ func TestRawTokensSuccess(t *testing.T) {
 					Lexeme: "true",
 				},
 			},
-			// (1 != 2 || 3 < 4) + 43 - "hehehe" * true
-			expectedOutput: "(! 1 2)",
+			expectedOutput: "(+ (+ (group (!= 1 (<= (<= 2 3) 4))) 43) (* hehehe true))",
 		},
 	}
 
@@ -137,8 +136,16 @@ func TestScannedTokensSuccess(t *testing.T) {
 			expectedOutput:  `(+ hehehe 42)`,
 		},
 		{
-			inputExpression: `"4 / 5`,
-			expectedOutput:  `(+ hehehe 42)`,
+			inputExpression: `4 / 5`,
+			expectedOutput:  `(/ 4 5)`,
+		},
+		{
+			inputExpression: `(1 != (3 < 4))`,
+			expectedOutput:  `(group (!= 1 (group (< 3 4))))`,
+		},
+		{
+			inputExpression: `(1 +1) * 43 - "hehehe" * true`,
+			expectedOutput:  `(- (* (group (+ 1 1)) 43) (* hehehe true))`,
 		},
 	}
 
