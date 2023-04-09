@@ -2,51 +2,50 @@ package lexer
 
 import (
 	"fmt"
-	"github.com/levpaul/glocks/internal/token"
 	"go.uber.org/zap"
 	"strconv"
 )
 
-var keywordMap = map[string]token.TokenType{
-	"and":    token.AND,
-	"class":  token.CLASS,
-	"else":   token.ELSE,
-	"false":  token.FALSE,
-	"fun":    token.FUN,
-	"for":    token.FOR,
-	"if":     token.IF,
-	"nil":    token.NIL,
-	"or":     token.OR,
-	"print":  token.PRINT,
-	"return": token.RETURN,
-	"super":  token.SUPER,
-	"this":   token.THIS,
-	"true":   token.TRUE,
-	"var":    token.VAR,
-	"while":  token.WHILE,
+var keywordMap = map[string]TokenType{
+	"and":    AND,
+	"class":  CLASS,
+	"else":   ELSE,
+	"false":  FALSE,
+	"fun":    FUN,
+	"for":    FOR,
+	"if":     IF,
+	"nil":    NIL,
+	"or":     OR,
+	"print":  PRINT,
+	"return": RETURN,
+	"super":  SUPER,
+	"this":   THIS,
+	"true":   TRUE,
+	"var":    VAR,
+	"while":  WHILE,
 }
 
 type Scanner struct {
 	source string
-	log    zap.SugaredLogger
-	tokens []token.Token
+	log    *zap.SugaredLogger
+	tokens []*Token
 
 	start   int
 	current int
 	line    int
 }
 
-func NewScanner(source string, log zap.SugaredLogger) *Scanner {
+func NewScanner(source string, log *zap.SugaredLogger) *Scanner {
 	return &Scanner{
 		source: source,
 		log:    log,
-		tokens: []token.Token{},
+		tokens: []*Token{},
 		line:   1,
 	}
 }
 
 // ScanTokens scans all text in source of scanner and returns them as tokens
-func (s *Scanner) ScanTokens() []token.Token {
+func (s *Scanner) ScanTokens() []*Token {
 	for !s.isAtEnd() {
 		// Reset start of current token being parsed
 		s.start = s.current
@@ -55,8 +54,8 @@ func (s *Scanner) ScanTokens() []token.Token {
 		}
 	}
 
-	s.tokens = append(s.tokens, token.Token{
-		Type:    token.EOF,
+	s.tokens = append(s.tokens, &Token{
+		Type:    EOF,
 		Lexeme:  "",
 		Literal: nil,
 		Line:    s.line,
@@ -69,40 +68,40 @@ func (s *Scanner) scanToken() error {
 	r := s.advance()
 	switch r {
 	case '(':
-		s.addToken(token.LEFT_PAREN)
+		s.addToken(LEFT_PAREN)
 	case ')':
-		s.addToken(token.RIGHT_PAREN)
+		s.addToken(RIGHT_PAREN)
 	case '{':
-		s.addToken(token.LEFT_BRACE)
+		s.addToken(LEFT_BRACE)
 	case '}':
-		s.addToken(token.RIGHT_BRACE)
+		s.addToken(RIGHT_BRACE)
 	case ',':
-		s.addToken(token.COMMA)
+		s.addToken(COMMA)
 	case '.':
-		s.addToken(token.DOT)
+		s.addToken(DOT)
 	case '-':
-		s.addToken(token.MINUS)
+		s.addToken(MINUS)
 	case '+':
-		s.addToken(token.PLUS)
+		s.addToken(PLUS)
 	case ';':
-		s.addToken(token.SEMICOLON)
+		s.addToken(SEMICOLON)
 	case '*':
-		s.addToken(token.STAR)
+		s.addToken(STAR)
 	case '!':
-		s.addToken(s.matchTern('=', token.BANG_EQUAL, token.BANG))
+		s.addToken(s.matchTern('=', BANG_EQUAL, BANG))
 	case '=':
-		s.addToken(s.matchTern('=', token.EQUAL_EQUAL, token.EQUAL))
+		s.addToken(s.matchTern('=', EQUAL_EQUAL, EQUAL))
 	case '<':
-		s.addToken(s.matchTern('=', token.LESS_EQUAL, token.LESS))
+		s.addToken(s.matchTern('=', LESS_EQUAL, LESS))
 	case '>':
-		s.addToken(s.matchTern('=', token.GREATER_EQUAL, token.GREATER))
+		s.addToken(s.matchTern('=', GREATER_EQUAL, GREATER))
 	case '/':
 		if s.match('/') {
 			for s.peek() != '\n' && !s.isAtEnd() {
 				s.advance()
 			}
 		} else {
-			s.addToken(token.SLASH)
+			s.addToken(SLASH)
 		}
 		//  === ignoring whitespace ===
 	case ' ':
@@ -137,7 +136,7 @@ func (s *Scanner) scanIdentifier() {
 
 	tt, ok := keywordMap[identifier]
 	if !ok {
-		tt = token.IDENTIFIER
+		tt = IDENTIFIER
 	}
 	s.addToken(tt)
 }
@@ -163,7 +162,7 @@ func (s *Scanner) scanNumber() error {
 	if err != nil {
 		return fmt.Errorf("error converting number to float - %w", err)
 	}
-	s.addLiteralToken(token.NUMBER, val)
+	s.addLiteralToken(NUMBER, val)
 	return nil
 }
 
@@ -175,7 +174,7 @@ func (s *Scanner) scanString() {
 		s.advance()
 	}
 	s.advance() // skip last quote
-	s.addLiteralToken(token.STRING, s.source[s.start+1:s.current-1])
+	s.addLiteralToken(STRING, s.source[s.start+1:s.current-1])
 }
 
 // Returns rune from source at current index, without advancing the index
@@ -213,7 +212,7 @@ func (s *Scanner) match(r rune) bool {
 // matchTern acts as a ternary operator, returning the positive or negative TokenType based on
 // whether the next character in the source matches the given r. In case a match is found, the
 // scanner is advanced by one.
-func (s *Scanner) matchTern(r rune, posRes token.TokenType, negRes token.TokenType) token.TokenType {
+func (s *Scanner) matchTern(r rune, posRes TokenType, negRes TokenType) TokenType {
 	if s.match(r) {
 		return posRes
 	} else {
@@ -221,12 +220,12 @@ func (s *Scanner) matchTern(r rune, posRes token.TokenType, negRes token.TokenTy
 	}
 }
 
-func (s *Scanner) addToken(t token.TokenType) {
+func (s *Scanner) addToken(t TokenType) {
 	s.addLiteralToken(t, nil)
 }
 
-func (s *Scanner) addLiteralToken(t token.TokenType, lit any) {
-	s.tokens = append(s.tokens, token.Token{
+func (s *Scanner) addLiteralToken(t TokenType, lit any) {
+	s.tokens = append(s.tokens, &Token{
 		Type:    t,
 		Lexeme:  s.source[s.start:s.current],
 		Literal: lit,
