@@ -1,8 +1,6 @@
-package lexer
+package parser
 
-import (
-	"github.com/levpaul/glocks/internal/token"
-)
+import "github.com/levpaul/glocks/internal/lexer"
 
 type Expr interface {
 }
@@ -10,7 +8,7 @@ type Expr interface {
 type Binary struct {
 	Left     Expr
 	Right    Expr
-	Operator token.Token
+	Operator *lexer.Token
 }
 
 type Grouping struct {
@@ -22,6 +20,6 @@ type Literal struct {
 }
 
 type Unary struct {
-	Operator token.Token
+	Operator *lexer.Token
 	Right    Expr
 }
