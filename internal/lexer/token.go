@@ -63,3 +63,7 @@ type Token struct {
 func (t *Token) String() string {
 	return fmt.Sprintf("Type:%d, Lexeme:%s, Line:%d", t.Type, t.Lexeme, t.Line)
 }
+
+func (t *Token) GenerateTokenError(msg string) error {
+	return fmt.Errorf("%s. Line %d. Token '%s'", msg, t.Line, t.Lexeme)
+}
