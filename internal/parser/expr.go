@@ -3,14 +3,14 @@ package parser
 import "github.com/levpaul/glocks/internal/lexer"
 
 type Expr interface {
-	Accept(v Visitor)
+	Accept(v Visitor) error
 }
 
 type Visitor interface {
-	VisitBinary(b Binary)
-	VisitGrouping(g Grouping)
-	VisitLiteral(l Literal)
-	VisitUnary(u Unary)
+	VisitBinary(b Binary) error
+	VisitGrouping(g Grouping) error
+	VisitLiteral(l Literal) error
+	VisitUnary(u Unary) error
 }
 
 type Binary struct {
@@ -19,24 +19,24 @@ type Binary struct {
 	Operator *lexer.Token
 }
 
-func (b Binary) Accept(v Visitor) {
-	v.VisitBinary(b)
+func (b Binary) Accept(v Visitor) error {
+	return v.VisitBinary(b)
 }
 
 type Grouping struct {
 	Expression Expr
 }
 
-func (g Grouping) Accept(v Visitor) {
-	v.VisitGrouping(g)
+func (g Grouping) Accept(v Visitor) error {
+	return v.VisitGrouping(g)
 }
 
 type Literal struct {
 	Value any // Probably make a union type here
 }
 
-func (l Literal) Accept(v Visitor) {
-	v.VisitLiteral(l)
+func (l Literal) Accept(v Visitor) error {
+	return v.VisitLiteral(l)
 }
 
 type Unary struct {
@@ -44,6 +44,6 @@ type Unary struct {
 	Right    Expr
 }
 
-func (u Unary) Accept(v Visitor) {
-	v.VisitUnary(u)
+func (u Unary) Accept(v Visitor) error {
+	return v.VisitUnary(u)
 }
