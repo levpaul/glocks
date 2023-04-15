@@ -5,40 +5,51 @@ import (
 	"strings"
 )
 
-type ExprPrinter struct{}
+type ExprPrinter struct {
+	res string
+}
+
+func (e *ExprPrinter) VisitBinary(b Binary) error {
+	e.res = e.parenthesize(b.Operator.Lexeme, b.Left, b.Right)
+	return nil
+}
+
+func (e *ExprPrinter) VisitGrouping(g Grouping) error {
+	e.res = e.parenthesize("group", g.Expression)
+	return nil
+}
+
+func (e *ExprPrinter) VisitLiteral(l Literal) error {
+	if l.Value == nil {
+		e.res = "nil"
+	}
+	e.res = fmt.Sprintf("%+v", l.Value)
+	return nil
+}
+
+func (e *ExprPrinter) VisitUnary(u Unary) error {
+	e.res = e.parenthesize(u.Operator.Lexeme, u.Right)
+	return nil
+}
 
 // Print walks through an expression and prints it in a Lisp like syntax
-func (a *ExprPrinter) Print(expr Expr) string {
+func (e *ExprPrinter) Print(expr Expr) string {
 	if expr == nil {
 		return ""
 	}
 
-	switch e := expr.(type) {
-	case Binary:
-		return a.parenthesize(e.Operator.Lexeme, e.Left, e.Right)
-	case Grouping:
-		return a.parenthesize("group", e.Expression)
-	case Literal:
-		if e.Value == nil {
-			return "nil"
-		}
-		return fmt.Sprintf("%+v", e.Value)
-	case Unary:
-		return a.parenthesize(e.Operator.Lexeme, e.Right)
-	default:
-		return fmt.Sprintf("<unsupported expr: raw=%+v>", expr)
-	}
-	return ""
+	expr.Accept(e)
+	return e.res
 }
 
-func (a *ExprPrinter) parenthesize(name string, exprs ...Expr) string {
+func (e *ExprPrinter) parenthesize(name string, exprs ...Expr) string {
 	builder := strings.Builder{}
 	builder.WriteString("(")
 	builder.WriteString(name)
 
-	for _, e := range exprs {
+	for _, expr := range exprs {
 		builder.WriteString(" ")
-		builder.WriteString(a.Print(e))
+		builder.WriteString(e.Print(expr))
 	}
 
 	builder.WriteString(")")
