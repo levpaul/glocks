@@ -14,19 +14,6 @@ type Evaluator struct {
 	res any
 }
 
-func (e *Evaluator) validateBothNumber(left Value, right Value) error {
-	_, ok := left.(float64)
-	if !ok {
-		return fmt.Errorf("%v is not a number", left)
-	}
-
-	_, ok = right.(float64)
-	if !ok {
-		return fmt.Errorf("%v is not a number", right)
-	}
-	return nil
-}
-
 func (e *Evaluator) VisitBinary(b Binary) error {
 	left, err := e.Evaluate(b.Left)
 	if err != nil {
@@ -52,8 +39,15 @@ func (e *Evaluator) VisitBinary(b Binary) error {
 			return err
 		}
 		e.res = left.(float64) * right.(float64)
-
-		// TODO: Add + < <= > >= != ==
+	case lexer.PLUS:
+		if e.validateBothNumber(left, right) == nil {
+			e.res = left.(float64) + right.(float64)
+		} else if e.validateBothString(left, right) == nil {
+			e.res = left.(string) + right.(string)
+		} else {
+			return fmt.Errorf("could not use + on values that are not both strings or numbers, values: '%v', '%v'", left, right)
+		}
+	// TODO: Add < <= > >= != ==
 	default:
 		return fmt.Errorf("unexpected operator type in binary: %+v", b)
 	}
@@ -115,4 +109,38 @@ func isTruthy(v Value) bool {
 		return b
 	}
 	return true
+}
+
+func (e *Evaluator) validateBothNumber(left Value, right Value) error {
+	// Benchmarks show that using a custom struct for values, where a member stores the specific underlying type
+	// would increase the performance here by 30%, but it means trading off extra memory per value and still doesn't
+	// help during evaluation anyway, as we need to type assert to run operations like addition etc, could be cool
+	// to write richer benchmarks to evaluate overall memory vs speed costs after full interpreter impl
+	// Note: those benchmarks only show performance difference when trying to type assert on passed struct types,
+	// not when passing interface types.
+	// Another note is that benchmarks show no difference in validating via type assertions and then re-asserting
+	// for using the value - the compiler must be optimizing that for us in any case
+	_, ok := left.(float64)
+	if !ok {
+		return fmt.Errorf("%v is not a number", left)
+	}
+
+	_, ok = right.(float64)
+	if !ok {
+		return fmt.Errorf("%v is not a number", right)
+	}
+	return nil
+}
+
+func (e *Evaluator) validateBothString(left Value, right Value) error {
+	_, ok := left.(string)
+	if !ok {
+		return fmt.Errorf("%v is not a string", left)
+	}
+
+	_, ok = right.(string)
+	if !ok {
+		return fmt.Errorf("%v is not a string", right)
+	}
+	return nil
 }
