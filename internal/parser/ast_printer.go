@@ -9,6 +9,16 @@ type ExprPrinter struct {
 	res string
 }
 
+func (e *ExprPrinter) VisitVariable(v Variable) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (e *ExprPrinter) VisitVarStmt(v VarStmt) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (e *ExprPrinter) VisitBinary(b Binary) error {
 	e.res = e.parenthesize(b.Operator.Lexeme, b.Left, b.Right)
 	return nil

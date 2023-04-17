@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"github.com/levpaul/glocks/internal/lexer"
 	"go.uber.org/zap"
 )
@@ -17,6 +18,9 @@ factor         → unary ( ( "/" | "*" ) unary )* ;
 unary          → ( "!" | "-" ) unary | primary ;
 primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
 */
+
+// Parse starts parsing with lowest precedence part of Expression and recursively descend to highest precedence Expr
+// This is a Recursive Decent Parser
 type Parser struct {
 	current int
 	tokens  []*lexer.Token
@@ -37,7 +41,7 @@ func NewParser(log *zap.SugaredLogger, tokens []*lexer.Token) *Parser {
 func (p *Parser) Parse() ([]Stmt, error) {
 	stmts := []Stmt{}
 	for !p.isAtEnd() {
-		stmt, err := p.statement()
+		stmt, err := p.declaration()
 		if err != nil {
 			p.synchronize()
 			return nil, err // REPL only?
@@ -48,14 +52,42 @@ func (p *Parser) Parse() ([]Stmt, error) {
 	return stmts, nil
 }
 
-// Start parsing with lowest precedence part of Expression and recursively descend to highest precedence Expr
-// This is a Recursive Decent Parser
-// expression → equality ;
+func (p *Parser) declaration() (s Stmt, err error) {
+	if p.match(lexer.VAR) {
+		return p.varDeclaration()
+	}
+	return p.statement()
+}
+
+func (p *Parser) varDeclaration() (s Stmt, err error) {
+	name, err := p.consume(lexer.IDENTIFIER)
+	if err != nil {
+		return nil, fmt.Errorf("expected an identifier after 'var'; err='%w'", err)
+	}
+
+	var initializer Expr
+	if p.match(lexer.EQUAL) {
+		initializer, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = p.consume(lexer.SEMICOLON)
+	if err != nil {
+		return nil, errors.New("expected semi-colon after var declaration")
+	}
+
+	return &VarStmt{
+		name: name.Lexeme,
+		val:  initializer,
+	}, nil
+}
+
 func (p *Parser) statement() (s Stmt, err error) {
 	cur := p.tokens[p.current]
-	if cur.Type == lexer.PRINT {
+	if p.match(lexer.PRINT) {
 		var arg Expr
-		_ = p.advance()
 		arg, err = p.expression()
 		if err != nil {
 			return
@@ -175,7 +207,7 @@ func (p *Parser) unary() (Expr, error) {
 	return p.primary()
 }
 
-// primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+// primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
 func (p *Parser) primary() (Expr, error) {
 	cur := p.tokens[p.current]
 
@@ -205,6 +237,9 @@ func (p *Parser) primary() (Expr, error) {
 		return Literal{Value: false}, nil
 	case lexer.NIL:
 		return Literal{Value: nil}, nil
+
+	case lexer.IDENTIFIER:
+		return Variable{TokenName: cur.Lexeme}, nil
 
 	default:
 		return nil, cur.GenerateTokenError("Could not parse expression, expected a primary expression")
@@ -246,6 +281,20 @@ func (p *Parser) match(t ...lexer.TokenType) bool {
 		}
 	}
 	return false
+}
+
+func (p *Parser) consume(t lexer.TokenType) (*lexer.Token, error) {
+	cur := p.getCurrent()
+	if cur == nil {
+		return nil, fmt.Errorf("tried to consume token but could not get current")
+	}
+
+	if cur.Type == t {
+		p.advance()
+		return cur, nil
+	}
+
+	return nil, fmt.Errorf("tried to consume token of type %v but current is %v", t, cur)
 }
 
 func (p *Parser) isAtEnd() bool {

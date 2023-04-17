@@ -19,3 +19,12 @@ type PrintStmt struct {
 func (p PrintStmt) Accept(v Visitor) error {
 	return v.VisitPrintStmt(p)
 }
+
+type VarStmt struct {
+	name string
+	val  Value
+}
+
+func (v VarStmt) Accept(visitor Visitor) error {
+	return visitor.VisitVarStmt(v)
+}

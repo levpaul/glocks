@@ -36,7 +36,7 @@ func (i *Interpreter) REPL() error {
 			i.log.Info("Exiting glocks repl")
 			return nil
 		default: // REPL process line
-			if i.runLine(line) != nil {
+			if err = i.runLine(line); err != nil {
 				i.log.Warn(err)
 			}
 		}
