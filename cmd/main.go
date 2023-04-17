@@ -24,7 +24,6 @@ func execute() {
 	log := rawLogger.Sugar()
 
 	glocksI := interpreter.New(log)
-
 	var rootCmd = &cobra.Command{
 		Use:           "glocks",
 		Short:         "glocks <file> run <file> or open the glocks REPL",
@@ -37,7 +36,12 @@ func execute() {
 			}
 
 			if len(args) == 1 {
-				return glocksI.RunFile(args[0])
+				program, err := os.ReadFile(args[0])
+				if err != nil {
+					log.With("error", err).Errorf("Failed to read file '%s' from disk\n", args[0])
+					return err
+				}
+				return glocksI.Run(string(program))
 			}
 
 			return glocksI.REPL()

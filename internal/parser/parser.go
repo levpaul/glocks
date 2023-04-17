@@ -34,21 +34,49 @@ func NewParser(log *zap.SugaredLogger, tokens []*lexer.Token) *Parser {
 	}
 }
 
-func (p *Parser) Parse() (Expr, error) {
-	expr, err := p.expression()
-	if err != nil {
-		p.synchronize()
-		return nil, err
-	}
+func (p *Parser) Parse() ([]Stmt, error) {
+	stmts := []Stmt{}
+	for !p.isAtEnd() {
+		stmt, err := p.statement()
+		if err != nil {
+			p.synchronize()
+			return nil, err // REPL only?
+		}
 
-	return expr, nil
+		stmts = append(stmts, stmt)
+	}
+	return stmts, nil
 }
 
 // Start parsing with lowest precedence part of Expression and recursively descend to highest precedence Expr
 // This is a Recursive Decent Parser
 // expression → equality ;
+func (p *Parser) statement() (s Stmt, err error) {
+	cur := p.tokens[p.current]
+	if cur.Type == lexer.PRINT {
+		var arg Expr
+		_ = p.advance()
+		arg, err = p.expression()
+		if err != nil {
+			return
+		}
+		s = PrintStmt{arg: arg}
+	} else if s, err = p.expression(); err != nil { // Expression Statement
+		return nil, err
+	}
+
+	if !p.match(lexer.SEMICOLON) {
+		return nil, cur.GenerateTokenError("Expected ; after statement")
+	}
+	return
+}
+
 func (p *Parser) expression() (Expr, error) {
-	return p.equality()
+	expr, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+	return expr, nil
 }
 
 // equality → comparison ( ( "!=" | "==" ) comparison )* ;
@@ -184,10 +212,10 @@ func (p *Parser) primary() (Expr, error) {
 }
 
 func (p *Parser) advance() error {
-	if p.current+1 >= len(p.tokens) {
-		return errors.New("tried to advance parser, but already at the last token")
-	}
 	p.current++
+	if p.current >= len(p.tokens) {
+		return errors.New("parser already at end of input when advance() was called")
+	}
 	return nil
 }
 
@@ -218,6 +246,13 @@ func (p *Parser) match(t ...lexer.TokenType) bool {
 		}
 	}
 	return false
+}
+
+func (p *Parser) isAtEnd() bool {
+	if p.current >= len(p.tokens) {
+		return true
+	}
+	return p.tokens[p.current].Type == lexer.EOF
 }
 
 func (p *Parser) synchronize() {

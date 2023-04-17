@@ -2,43 +2,73 @@ package interpreter
 
 import (
 	"fmt"
+	"github.com/levpaul/glocks/internal/lexer"
+	"github.com/levpaul/glocks/internal/parser"
 	"go.uber.org/zap"
-	"os"
+	"io"
 	"strings"
 )
 
 func New(log *zap.SugaredLogger) *Interpreter {
-	return &Interpreter{log: log}
+	return &Interpreter{
+		log:          log,
+		s:            nil,
+		p:            nil,
+		astPrinter:   parser.ExprPrinter{},
+		astEvaluator: parser.Evaluator{},
+		replMode:     false,
+	}
 }
 
 type Interpreter struct {
-	log *zap.SugaredLogger
+	log          *zap.SugaredLogger
+	s            *lexer.Scanner
+	p            *parser.Parser
+	astPrinter   parser.ExprPrinter
+	astEvaluator parser.Evaluator
+	replMode     bool
+	printOutput  io.Writer
 }
 
-func (i *Interpreter) RunFile(file string) error {
-
-	program, err := os.ReadFile(file)
-	if err != nil {
-		i.log.With("error", err).Errorf("Failed to read file '%s' from disk\n", file)
-		return err
-	}
-
+func (i *Interpreter) Run(program string) error {
+	var err error
 	lineNumber := 1
-	for _, line := range strings.Split(string(program), "\n") {
+	for _, line := range strings.Split(program, "\n") {
 		if err = i.runLine(line); err != nil {
 			i.log.With("error", err).
-				Errorf("Failed to run line number %d from program '%s'; line:\n%s\n", lineNumber, file, line)
+				Errorf("Failed to run line number %d; line:\n%s\n", lineNumber, line)
 			return err
 		}
 
 		lineNumber++
 	}
 
-	i.log.Infof("Successfully ran %d lines of code from program '%s'\n", lineNumber, file)
+	i.log.Infof("Successfully ran %d lines of code'\n", lineNumber)
 	return nil
 }
 
 func (i *Interpreter) runLine(line string) error {
-	fmt.Printf("Pretending to run '%s'... DONE!\n", line)
+	// TODO: add reset func to scanner/parser
+	i.s = lexer.NewScanner(line, i.log)
+	tokens := i.s.ScanTokens()
+	i.p = parser.NewParser(i.log, tokens)
+	stmts, err := i.p.Parse()
+	if err != nil {
+		return fmt.Errorf("failed to parse line, err='%w'", err)
+	}
+	for _, stmt := range stmts {
+		if i.replMode && i.log.Level() <= zap.DebugLevel {
+			i.log.Debugf("AST repr of input: %s", i.astPrinter.Print(stmt))
+		}
+
+		result, err := i.astEvaluator.Evaluate(stmt)
+		if err != nil {
+			return fmt.Errorf("failed to evaluate expression: '%w'", err)
+		}
+		if i.replMode && result != nil { // only print our statements which evaluate to a Value
+			fmt.Println("evaluates to:", result)
+		}
+	}
+
 	return nil
 }

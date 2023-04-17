@@ -1,16 +1,11 @@
 package parser
 
-import "github.com/levpaul/glocks/internal/lexer"
+import (
+	"github.com/levpaul/glocks/internal/lexer"
+)
 
 type Expr interface {
 	Accept(v Visitor) error
-}
-
-type Visitor interface {
-	VisitBinary(b Binary) error
-	VisitGrouping(g Grouping) error
-	VisitLiteral(l Literal) error
-	VisitUnary(u Unary) error
 }
 
 type Binary struct {

@@ -32,13 +32,22 @@ func (e *ExprPrinter) VisitUnary(u Unary) error {
 	return nil
 }
 
+func (e *ExprPrinter) VisitExprStmt(exprStmt ExprStmt) error {
+	return exprStmt.expr.Accept(e)
+}
+
+func (e *ExprPrinter) VisitPrintStmt(p PrintStmt) error {
+	e.res = e.parenthesize("print", p.arg)
+	return nil
+}
+
 // Print walks through an expression and prints it in a Lisp like syntax
-func (e *ExprPrinter) Print(expr Expr) string {
-	if expr == nil {
+func (e *ExprPrinter) Print(stmt Stmt) string {
+	if stmt == nil {
 		return ""
 	}
 
-	expr.Accept(e)
+	stmt.Accept(e)
 	return e.res
 }
 
