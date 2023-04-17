@@ -14,6 +14,14 @@ type Evaluator struct {
 	res any
 }
 
+func (e *Evaluator) VisitVariable(v Variable) error {
+	return errors.New("variable expression impl has not been made yet")
+}
+
+func (e *Evaluator) VisitVarStmt(v VarStmt) error {
+	return errors.New("variable statement impl has not been made yet")
+}
+
 func (e *Evaluator) VisitExprStmt(s ExprStmt) error {
 	return s.expr.Accept(e)
 }

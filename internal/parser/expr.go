@@ -42,3 +42,11 @@ type Unary struct {
 func (u Unary) Accept(v Visitor) error {
 	return v.VisitUnary(u)
 }
+
+type Variable struct {
+	TokenName string
+}
+
+func (v Variable) Accept(visitor Visitor) error {
+	return visitor.VisitVariable(v)
+}
