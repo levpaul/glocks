@@ -6,12 +6,26 @@ import (
 	"github.com/levpaul/glocks/internal/lexer"
 )
 
-const NilExpressionErrorMessage = "can not evaluate a nil expression"
+const NilStatementErrorMessage = "can not evaluate a nil expression"
 
 type Value any
 
 type Evaluator struct {
 	res any
+}
+
+func (e *Evaluator) VisitExprStmt(s ExprStmt) error {
+	return s.expr.Accept(e)
+}
+
+func (e *Evaluator) VisitPrintStmt(p PrintStmt) error {
+	err := p.arg.Accept(e)
+	if err != nil {
+		return err
+	}
+	fmt.Println(e.res)
+	e.res = nil
+	return nil
 }
 
 func (e *Evaluator) VisitBinary(b Binary) error {
@@ -47,7 +61,31 @@ func (e *Evaluator) VisitBinary(b Binary) error {
 		} else {
 			return fmt.Errorf("could not use + on values that are not both strings or numbers, values: '%v', '%v'", left, right)
 		}
-	// TODO: Add < <= > >= != ==
+	case lexer.LESS:
+		if err = e.validateBothNumber(left, right); err != nil {
+			return err
+		}
+		e.res = left.(float64) < right.(float64)
+	case lexer.LESS_EQUAL:
+		if err = e.validateBothNumber(left, right); err != nil {
+			return err
+		}
+		e.res = left.(float64) <= right.(float64)
+	case lexer.GREATER:
+		if err = e.validateBothNumber(left, right); err != nil {
+			return err
+		}
+		e.res = left.(float64) > right.(float64)
+	case lexer.GREATER_EQUAL:
+		if err = e.validateBothNumber(left, right); err != nil {
+			return err
+		}
+		e.res = left.(float64) <= right.(float64)
+	case lexer.EQUAL_EQUAL:
+		e.res = isEqual(left, right)
+	case lexer.BANG_EQUAL:
+		e.res = !isEqual(left, right)
+
 	default:
 		return fmt.Errorf("unexpected operator type in binary: %+v", b)
 	}
@@ -89,12 +127,12 @@ func (e *Evaluator) VisitUnary(u Unary) error {
 }
 
 // Print walks through an expression and prints it in a Lisp like syntax
-func (e *Evaluator) Evaluate(expr Expr) (Value, error) {
-	if expr == nil {
-		return nil, errors.New(NilExpressionErrorMessage)
+func (e *Evaluator) Evaluate(stmt Stmt) (Value, error) {
+	if stmt == nil {
+		return nil, errors.New(NilStatementErrorMessage)
 	}
 
-	if err := expr.Accept(e); err != nil {
+	if err := stmt.Accept(e); err != nil {
 		return nil, err
 	}
 	return e.res, nil
@@ -109,6 +147,17 @@ func isTruthy(v Value) bool {
 		return b
 	}
 	return true
+}
+
+func isEqual(v1, v2 Value) bool {
+	if v1 == nil && v2 == nil {
+		return true
+	}
+	if v1 == nil {
+		return false
+	}
+
+	return v1 == v2
 }
 
 func (e *Evaluator) validateBothNumber(left Value, right Value) error {
