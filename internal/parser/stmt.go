@@ -1,11 +1,13 @@
 package parser
 
+type Value any
+
 type Stmt interface {
 	Accept(Visitor) error
 }
 
 type ExprStmt struct {
-	expr Expr
+	E Expr
 }
 
 func (e ExprStmt) Accept(v Visitor) error {
@@ -13,7 +15,7 @@ func (e ExprStmt) Accept(v Visitor) error {
 }
 
 type PrintStmt struct {
-	arg Expr
+	Arg Expr
 }
 
 func (p PrintStmt) Accept(v Visitor) error {
@@ -21,8 +23,8 @@ func (p PrintStmt) Accept(v Visitor) error {
 }
 
 type VarStmt struct {
-	name string
-	val  Value
+	Name        string
+	Initializer Expr
 }
 
 func (v VarStmt) Accept(visitor Visitor) error {

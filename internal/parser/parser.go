@@ -79,8 +79,8 @@ func (p *Parser) varDeclaration() (s Stmt, err error) {
 	}
 
 	return &VarStmt{
-		name: name.Lexeme,
-		val:  initializer,
+		Name:        name.Lexeme,
+		Initializer: initializer,
 	}, nil
 }
 
@@ -92,7 +92,7 @@ func (p *Parser) statement() (s Stmt, err error) {
 		if err != nil {
 			return
 		}
-		s = PrintStmt{arg: arg}
+		s = PrintStmt{Arg: arg}
 	} else if s, err = p.expression(); err != nil { // Expression Statement
 		return nil, err
 	}

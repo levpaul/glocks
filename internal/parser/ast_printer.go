@@ -43,11 +43,11 @@ func (e *ExprPrinter) VisitUnary(u Unary) error {
 }
 
 func (e *ExprPrinter) VisitExprStmt(exprStmt ExprStmt) error {
-	return exprStmt.expr.Accept(e)
+	return exprStmt.E.Accept(e)
 }
 
 func (e *ExprPrinter) VisitPrintStmt(p PrintStmt) error {
-	e.res = e.parenthesize("print", p.arg)
+	e.res = e.parenthesize("print", p.Arg)
 	return nil
 }
 
