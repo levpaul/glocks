@@ -1,98 +1,103 @@
-package parser
+package interpreter
 
 import (
 	"errors"
 	"fmt"
 	"github.com/levpaul/glocks/internal/lexer"
+	"github.com/levpaul/glocks/internal/parser"
 )
 
 const NilStatementErrorMessage = "can not evaluate a nil expression"
 
-type Value any
-
-type Evaluator struct {
-	res any
+func (i *Interpreter) VisitVariable(v parser.Variable) (err error) {
+	i.evalRes, err = i.env.Get(v.TokenName)
+	return
 }
 
-func (e *Evaluator) VisitVariable(v Variable) error {
-	return errors.New("variable expression impl has not been made yet")
-}
-
-func (e *Evaluator) VisitVarStmt(v VarStmt) error {
-	return errors.New("variable statement impl has not been made yet")
-}
-
-func (e *Evaluator) VisitExprStmt(s ExprStmt) error {
-	return s.expr.Accept(e)
-}
-
-func (e *Evaluator) VisitPrintStmt(p PrintStmt) error {
-	err := p.arg.Accept(e)
-	if err != nil {
-		return err
+func (i *Interpreter) VisitVarStmt(v parser.VarStmt) error {
+	var err error
+	var initializer parser.Value
+	if v.Initializer != nil {
+		initializer, err = i.Evaluate(v.Initializer)
+		if err != nil {
+			return err
+		}
 	}
-	fmt.Println(e.res)
-	e.res = nil
+	i.env.Define(v.Name, initializer)
 	return nil
 }
 
-func (e *Evaluator) VisitBinary(b Binary) error {
-	left, err := e.Evaluate(b.Left)
+func (i *Interpreter) VisitExprStmt(s parser.ExprStmt) error {
+	return s.E.Accept(i)
+}
+
+func (i *Interpreter) VisitPrintStmt(p parser.PrintStmt) error {
+	err := p.Arg.Accept(i)
 	if err != nil {
 		return err
 	}
-	right, err := e.Evaluate(b.Right)
+	fmt.Println(i.evalRes)
+	i.evalRes = nil
+	return nil
+}
+
+func (i *Interpreter) VisitBinary(b parser.Binary) error {
+	left, err := i.Evaluate(b.Left)
+	if err != nil {
+		return err
+	}
+	right, err := i.Evaluate(b.Right)
 	if err != nil {
 		return err
 	}
 	switch b.Operator.Type {
 	case lexer.MINUS:
-		if err = e.validateBothNumber(left, right); err != nil {
+		if err = i.validateBothNumber(left, right); err != nil {
 			return err
 		}
-		e.res = left.(float64) - right.(float64)
+		i.evalRes = left.(float64) - right.(float64)
 	case lexer.SLASH:
-		if err = e.validateBothNumber(left, right); err != nil {
+		if err = i.validateBothNumber(left, right); err != nil {
 			return err
 		}
-		e.res = left.(float64) / right.(float64)
+		i.evalRes = left.(float64) / right.(float64)
 	case lexer.STAR:
-		if err = e.validateBothNumber(left, right); err != nil {
+		if err = i.validateBothNumber(left, right); err != nil {
 			return err
 		}
-		e.res = left.(float64) * right.(float64)
+		i.evalRes = left.(float64) * right.(float64)
 	case lexer.PLUS:
-		if e.validateBothNumber(left, right) == nil {
-			e.res = left.(float64) + right.(float64)
-		} else if e.validateBothString(left, right) == nil {
-			e.res = left.(string) + right.(string)
+		if i.validateBothNumber(left, right) == nil {
+			i.evalRes = left.(float64) + right.(float64)
+		} else if i.validateBothString(left, right) == nil {
+			i.evalRes = left.(string) + right.(string)
 		} else {
 			return fmt.Errorf("could not use + on values that are not both strings or numbers, values: '%v', '%v'", left, right)
 		}
 	case lexer.LESS:
-		if err = e.validateBothNumber(left, right); err != nil {
+		if err = i.validateBothNumber(left, right); err != nil {
 			return err
 		}
-		e.res = left.(float64) < right.(float64)
+		i.evalRes = left.(float64) < right.(float64)
 	case lexer.LESS_EQUAL:
-		if err = e.validateBothNumber(left, right); err != nil {
+		if err = i.validateBothNumber(left, right); err != nil {
 			return err
 		}
-		e.res = left.(float64) <= right.(float64)
+		i.evalRes = left.(float64) <= right.(float64)
 	case lexer.GREATER:
-		if err = e.validateBothNumber(left, right); err != nil {
+		if err = i.validateBothNumber(left, right); err != nil {
 			return err
 		}
-		e.res = left.(float64) > right.(float64)
+		i.evalRes = left.(float64) > right.(float64)
 	case lexer.GREATER_EQUAL:
-		if err = e.validateBothNumber(left, right); err != nil {
+		if err = i.validateBothNumber(left, right); err != nil {
 			return err
 		}
-		e.res = left.(float64) <= right.(float64)
+		i.evalRes = left.(float64) <= right.(float64)
 	case lexer.EQUAL_EQUAL:
-		e.res = isEqual(left, right)
+		i.evalRes = isEqual(left, right)
 	case lexer.BANG_EQUAL:
-		e.res = !isEqual(left, right)
+		i.evalRes = !isEqual(left, right)
 
 	default:
 		return fmt.Errorf("unexpected operator type in binary: %+v", b)
@@ -101,53 +106,54 @@ func (e *Evaluator) VisitBinary(b Binary) error {
 	return nil
 }
 
-func (e *Evaluator) VisitGrouping(g Grouping) error {
+func (i *Interpreter) VisitGrouping(g parser.Grouping) error {
 	var err error
-	e.res, err = e.Evaluate(g.Expression)
+	i.evalRes, err = i.Evaluate(g.Expression)
 	return err
 }
 
-func (e *Evaluator) VisitLiteral(l Literal) error {
-	e.res = l.Value
+func (i *Interpreter) VisitLiteral(l parser.Literal) error {
+	i.evalRes = l.Value
 	return nil
 }
 
-func (e *Evaluator) VisitUnary(u Unary) error {
+func (i *Interpreter) VisitUnary(u parser.Unary) error {
 	var err error
-	e.res, err = e.Evaluate(u.Right)
+	i.evalRes, err = i.Evaluate(u.Right)
 	if err != nil {
 		return err
 	}
 
 	switch u.Operator.Type {
 	case lexer.BANG:
-		val, ok := e.res.(float64)
+		val, ok := i.evalRes.(float64)
 		if !ok {
 			return fmt.Errorf("expected number with unary operator, had '%+v' instead", val)
 		}
-		e.res = -val
+		i.evalRes = -val
 	case lexer.MINUS:
-		e.res = isTruthy(e.res)
+		i.evalRes = isTruthy(i.evalRes)
 	default:
 		return fmt.Errorf("unexpected operator type in unary: %+v", u)
 	}
 	return nil
 }
 
-// Print walks through an expression and prints it in a Lisp like syntax
-func (e *Evaluator) Evaluate(stmt Stmt) (Value, error) {
+func (i *Interpreter) Evaluate(stmt parser.Stmt) (parser.Value, error) {
 	if stmt == nil {
 		return nil, errors.New(NilStatementErrorMessage)
 	}
 
-	if err := stmt.Accept(e); err != nil {
+	if err := stmt.Accept(i); err != nil {
 		return nil, err
 	}
-	return e.res, nil
+	retVal := i.evalRes
+	i.evalRes = nil
+	return retVal, nil
 }
 
 // isTruthy follows the ruby logic for truthiness
-func isTruthy(v Value) bool {
+func isTruthy(v parser.Value) bool {
 	if v == nil {
 		return false
 	}
@@ -157,7 +163,7 @@ func isTruthy(v Value) bool {
 	return true
 }
 
-func isEqual(v1, v2 Value) bool {
+func isEqual(v1, v2 parser.Value) bool {
 	if v1 == nil && v2 == nil {
 		return true
 	}
@@ -168,7 +174,7 @@ func isEqual(v1, v2 Value) bool {
 	return v1 == v2
 }
 
-func (e *Evaluator) validateBothNumber(left Value, right Value) error {
+func (i *Interpreter) validateBothNumber(left parser.Value, right parser.Value) error {
 	// Benchmarks show that using a custom struct for values, where a member stores the specific underlying type
 	// would increase the performance here by 30%, but it means trading off extra memory per value and still doesn't
 	// help during evaluation anyway, as we need to type assert to run operations like addition etc, could be cool
@@ -189,7 +195,7 @@ func (e *Evaluator) validateBothNumber(left Value, right Value) error {
 	return nil
 }
 
-func (e *Evaluator) validateBothString(left Value, right Value) error {
+func (i *Interpreter) validateBothString(left parser.Value, right parser.Value) error {
 	_, ok := left.(string)
 	if !ok {
 		return fmt.Errorf("%v is not a string", left)

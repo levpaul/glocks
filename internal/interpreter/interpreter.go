@@ -11,23 +11,24 @@ import (
 
 func New(log *zap.SugaredLogger) *Interpreter {
 	return &Interpreter{
-		log:          log,
-		s:            nil,
-		p:            nil,
-		astPrinter:   parser.ExprPrinter{},
-		astEvaluator: parser.Evaluator{},
-		replMode:     false,
+		log:        log,
+		s:          nil,
+		p:          nil,
+		astPrinter: parser.ExprPrinter{},
+		replMode:   false,
+		env:        Environment{Values: map[string]parser.Value{}},
 	}
 }
 
 type Interpreter struct {
-	log          *zap.SugaredLogger
-	s            *lexer.Scanner
-	p            *parser.Parser
-	astPrinter   parser.ExprPrinter
-	astEvaluator parser.Evaluator
-	replMode     bool
-	printOutput  io.Writer
+	log         *zap.SugaredLogger
+	s           *lexer.Scanner
+	p           *parser.Parser
+	astPrinter  parser.ExprPrinter
+	replMode    bool
+	printOutput io.Writer
+	env         Environment
+	evalRes     any
 }
 
 func (i *Interpreter) Run(program string) error {
@@ -61,7 +62,7 @@ func (i *Interpreter) runLine(line string) error {
 			i.log.Debugf("AST repr of input: %s", i.astPrinter.Print(stmt))
 		}
 
-		result, err := i.astEvaluator.Evaluate(stmt)
+		result, err := i.Evaluate(stmt)
 		if err != nil {
 			return fmt.Errorf("failed to evaluate expression: '%w'", err)
 		}
