@@ -31,6 +31,29 @@ type Interpreter struct {
 	evalRes     any
 }
 
+func (i *Interpreter) VisitBlock(b parser.Block) error {
+	oldEnv := i.env
+	env := Environment{
+		Enclosing: &i.env,
+		Values:    map[string]parser.Value{},
+	}
+	i.env = env
+	defer func() {
+		i.env = oldEnv
+	}()
+
+	for _, stmt := range b.Statements {
+		result, err := i.Evaluate(stmt)
+		if err != nil {
+			return err
+		}
+		if i.replMode && result != nil { // only print our statements which evaluate to a Value
+			fmt.Println("evaluates to:", result)
+		}
+	}
+	return nil
+}
+
 func (i *Interpreter) Run(program string) error {
 	var err error
 	lineNumber := 1

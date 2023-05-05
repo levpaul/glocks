@@ -9,6 +9,18 @@ import (
 
 const NilStatementErrorMessage = "can not evaluate a nil expression"
 
+func (i *Interpreter) VisitAssignment(a parser.Assignment) error {
+	v, err := i.Evaluate(a.Value)
+	if err != nil {
+		return err
+	}
+	if err = i.env.Set(a.TokenName, v); err != nil {
+		return err
+	}
+	i.evalRes = v
+	return nil
+}
+
 func (i *Interpreter) VisitVariable(v parser.Variable) (err error) {
 	i.evalRes, err = i.env.Get(v.TokenName)
 	return
@@ -139,7 +151,7 @@ func (i *Interpreter) VisitUnary(u parser.Unary) error {
 	return nil
 }
 
-func (i *Interpreter) Evaluate(stmt parser.Stmt) (parser.Value, error) {
+func (i *Interpreter) Evaluate(stmt parser.Node) (parser.Value, error) {
 	if stmt == nil {
 		return nil, errors.New(NilStatementErrorMessage)
 	}

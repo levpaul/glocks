@@ -19,7 +19,7 @@ unary          → ( "!" | "-" ) unary | primary ;
 primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
 */
 
-// Parse starts parsing with lowest precedence part of Expression and recursively descend to highest precedence Expr
+// Parse starts parsing with lowest precedence part of Expression and recursively descend to highest precedence Node
 // This is a Recursive Decent Parser
 type Parser struct {
 	current int
@@ -38,8 +38,8 @@ func NewParser(log *zap.SugaredLogger, tokens []*lexer.Token) *Parser {
 	}
 }
 
-func (p *Parser) Parse() ([]Stmt, error) {
-	stmts := []Stmt{}
+func (p *Parser) Parse() ([]Node, error) {
+	var stmts []Node
 	for !p.isAtEnd() {
 		stmt, err := p.declaration()
 		if err != nil {
@@ -52,20 +52,20 @@ func (p *Parser) Parse() ([]Stmt, error) {
 	return stmts, nil
 }
 
-func (p *Parser) declaration() (s Stmt, err error) {
+func (p *Parser) declaration() (s Node, err error) {
 	if p.match(lexer.VAR) {
 		return p.varDeclaration()
 	}
 	return p.statement()
 }
 
-func (p *Parser) varDeclaration() (s Stmt, err error) {
+func (p *Parser) varDeclaration() (s Node, err error) {
 	name, err := p.consume(lexer.IDENTIFIER)
 	if err != nil {
 		return nil, fmt.Errorf("expected an identifier after 'var'; err='%w'", err)
 	}
 
-	var initializer Expr
+	var initializer Node
 	if p.match(lexer.EQUAL) {
 		initializer, err = p.expression()
 		if err != nil {
@@ -84,10 +84,15 @@ func (p *Parser) varDeclaration() (s Stmt, err error) {
 	}, nil
 }
 
-func (p *Parser) statement() (s Stmt, err error) {
+// statement      → exprStmt
+// | printStmt
+// | block ;
+func (p *Parser) statement() (s Node, err error) {
 	cur := p.tokens[p.current]
-	if p.match(lexer.PRINT) {
-		var arg Expr
+	if p.match(lexer.LEFT_BRACE) {
+		return p.block()
+	} else if p.match(lexer.PRINT) {
+		var arg Node
 		arg, err = p.expression()
 		if err != nil {
 			return
@@ -103,16 +108,61 @@ func (p *Parser) statement() (s Stmt, err error) {
 	return
 }
 
-func (p *Parser) expression() (Expr, error) {
+// block          → "{" declaration* "}" ;
+func (p *Parser) block() (Node, error) {
+	var nodes []Node
+	open := p.getPrevious()
+	for !p.match(lexer.RIGHT_BRACE) {
+		if p.isAtEnd() {
+			return nil, open.GenerateTokenError("Reached end of file, expected closing brace")
+		}
+		n, err := p.declaration()
+		if err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, n)
+	}
+
+	return Block{Statements: nodes}, nil
+}
+
+// expression -> assignment
+func (p *Parser) expression() (Node, error) {
+	return p.assignment()
+}
+
+// assignment -> IDENTIFIER = assignment
+// _____________ | equality
+func (p *Parser) assignment() (Node, error) {
 	expr, err := p.equality()
 	if err != nil {
 		return nil, err
 	}
-	return expr, nil
+
+	exprToken := p.getPrevious()
+
+	if !p.match(lexer.EQUAL) {
+		return expr, nil
+	}
+
+	v, ok := expr.(Variable)
+	if !ok {
+		return nil, exprToken.GenerateTokenError("Expected variable for assignment but did not find")
+	}
+
+	rhs, err := p.assignment()
+	if err != nil {
+		return nil, err
+	}
+
+	return Assignment{
+		TokenName: v.TokenName,
+		Value:     rhs,
+	}, nil
 }
 
 // equality → comparison ( ( "!=" | "==" ) comparison )* ;
-func (p *Parser) equality() (Expr, error) {
+func (p *Parser) equality() (Node, error) {
 	res, err := p.comparison()
 	if err != nil {
 		return nil, err
@@ -133,7 +183,7 @@ func (p *Parser) equality() (Expr, error) {
 }
 
 // comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-func (p *Parser) comparison() (Expr, error) {
+func (p *Parser) comparison() (Node, error) {
 	res, err := p.term()
 	if err != nil {
 		return nil, err
@@ -153,7 +203,7 @@ func (p *Parser) comparison() (Expr, error) {
 }
 
 // term → factor ( ( "-" | "+" ) factor )* ;
-func (p *Parser) term() (Expr, error) {
+func (p *Parser) term() (Node, error) {
 	res, err := p.factor()
 	if err != nil {
 		return nil, err
@@ -173,7 +223,7 @@ func (p *Parser) term() (Expr, error) {
 }
 
 // factor → unary ( ( "/" | "*" ) unary )* ;
-func (p *Parser) factor() (Expr, error) {
+func (p *Parser) factor() (Node, error) {
 	res, err := p.unary()
 	if err != nil {
 		return nil, err
@@ -193,7 +243,7 @@ func (p *Parser) factor() (Expr, error) {
 }
 
 // unary → ( "!" | "-" ) unary | primary ;
-func (p *Parser) unary() (Expr, error) {
+func (p *Parser) unary() (Node, error) {
 	if cur := p.tokens[p.current]; p.match(lexer.BANG, lexer.MINUS) {
 		right, err := p.primary()
 		if err != nil {
@@ -208,7 +258,7 @@ func (p *Parser) unary() (Expr, error) {
 }
 
 // primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
-func (p *Parser) primary() (Expr, error) {
+func (p *Parser) primary() (Node, error) {
 	cur := p.tokens[p.current]
 
 	// Deal with only token which expects further tokens, otherwise advance and switch
@@ -268,6 +318,8 @@ func (p *Parser) getPrevious() *lexer.Token {
 	return p.tokens[p.current-1]
 }
 
+// match will attempt to match one of many token types and if it does, will advance the parser head
+// and return true, else returns false
 func (p *Parser) match(t ...lexer.TokenType) bool {
 	for _, tt := range t {
 		cur := p.getCurrent()
