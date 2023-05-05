@@ -9,6 +9,16 @@ type ExprPrinter struct {
 	res string
 }
 
+func (e *ExprPrinter) VisitBlock(b Block) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (e *ExprPrinter) VisitAssignment(v Assignment) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (e *ExprPrinter) VisitVariable(v Variable) error {
 	//TODO implement me
 	panic("implement me")
@@ -52,7 +62,7 @@ func (e *ExprPrinter) VisitPrintStmt(p PrintStmt) error {
 }
 
 // Print walks through an expression and prints it in a Lisp like syntax
-func (e *ExprPrinter) Print(stmt Stmt) string {
+func (e *ExprPrinter) Print(stmt Node) string {
 	if stmt == nil {
 		return ""
 	}
@@ -61,7 +71,7 @@ func (e *ExprPrinter) Print(stmt Stmt) string {
 	return e.res
 }
 
-func (e *ExprPrinter) parenthesize(name string, exprs ...Expr) string {
+func (e *ExprPrinter) parenthesize(name string, exprs ...Node) string {
 	builder := strings.Builder{}
 	builder.WriteString("(")
 	builder.WriteString(name)
