@@ -16,7 +16,7 @@ func New(log *zap.SugaredLogger) *Interpreter {
 		p:          nil,
 		astPrinter: parser.ExprPrinter{},
 		replMode:   false,
-		env:        Environment{Values: map[string]parser.Value{}},
+		env:        &Environment{Values: map[string]parser.Value{}},
 	}
 }
 
@@ -27,17 +27,16 @@ type Interpreter struct {
 	astPrinter  parser.ExprPrinter
 	replMode    bool
 	printOutput io.Writer
-	env         Environment
+	env         *Environment
 	evalRes     any
 }
 
 func (i *Interpreter) VisitBlock(b parser.Block) error {
 	oldEnv := i.env
-	env := Environment{
-		Enclosing: &i.env,
+	i.env = &Environment{
+		Enclosing: oldEnv,
 		Values:    map[string]parser.Value{},
 	}
-	i.env = env
 	defer func() {
 		i.env = oldEnv
 	}()
