@@ -2,6 +2,16 @@ package parser
 
 import "github.com/levpaul/glocks/internal/lexer"
 
+type IfStmt struct {
+	Expression    Node
+	Statement     Node
+	ElseStatement Node
+}
+
+func (i IfStmt) Accept(v Visitor) error {
+	return v.VisitIfStmt(i)
+}
+
 type Block struct {
 	Statements []Node
 }

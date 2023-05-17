@@ -7,7 +7,7 @@ import (
 )
 
 func TestPrintExpression(t *testing.T) {
-	// Create -123 * (45.67) as an expression (tree) and print it
+	// Create -123 * (45.67) as an Expression (tree) and print it
 	expr := Binary{
 		Left: Unary{
 			Operator: &lexer.Token{

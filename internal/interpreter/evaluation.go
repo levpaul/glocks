@@ -9,6 +9,45 @@ import (
 
 const NilStatementErrorMessage = "can not evaluate a nil expression"
 
+func (i *Interpreter) VisitIfStmt(ifStmt parser.IfStmt) error {
+	val, err := i.Evaluate(ifStmt.Expression)
+	if err != nil {
+		return err
+	}
+
+	if isTruthy(val) {
+		return ifStmt.Statement.Accept(i)
+	}
+
+	if ifStmt.ElseStatement == nil {
+		return nil
+	}
+
+	return ifStmt.ElseStatement.Accept(i)
+}
+
+func (i *Interpreter) VisitBlock(b parser.Block) error {
+	oldEnv := i.env
+	i.env = &Environment{
+		Enclosing: oldEnv,
+		Values:    map[string]parser.Value{},
+	}
+	defer func() {
+		i.env = oldEnv
+	}()
+
+	for _, stmt := range b.Statements {
+		result, err := i.Evaluate(stmt)
+		if err != nil {
+			return err
+		}
+		if i.replMode && result != nil { // only print our statements which evaluate to a Value
+			fmt.Println("evaluates to:", result)
+		}
+	}
+	return nil
+}
+
 func (i *Interpreter) VisitAssignment(a parser.Assignment) error {
 	v, err := i.Evaluate(a.Value)
 	if err != nil {

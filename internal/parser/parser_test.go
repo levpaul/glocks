@@ -110,7 +110,7 @@ func TestRawTokensSuccess(t *testing.T) {
 	printer := ExprPrinter{}
 	for _, test := range td {
 		p := NewParser(zap.S(), test.inputTokens)
-		res, err := p.expression()
+		res, err := p.expressionStmt()
 		assert.Nil(t, err, "Unexpected parser error")
 		assert.Equal(t, test.expectedOutput, printer.Print(res), "Failed test with input tokens %v", test.inputTokens)
 	}
@@ -153,11 +153,11 @@ func TestScannedTokensSuccess(t *testing.T) {
 	for _, test := range td {
 		scanner := lexer.NewScanner(test.inputExpression, zap.S())
 		scannedTokens := scanner.ScanTokens()
-		require.NotEmpty(t, scannedTokens, "Unexpectedly found not tokens after scanning input expression: '%s'", test.inputExpression)
+		require.NotEmpty(t, scannedTokens, "Unexpectedly found not tokens after scanning input Expression: '%s'", test.inputExpression)
 		// Remove last token, as scanner adds EOF token to end
 		p := NewParser(zap.S(), scannedTokens[:len(scannedTokens)-1])
-		res, err := p.expression()
+		res, err := p.expressionStmt()
 		assert.Nil(t, err, "Expected no errors from parser")
-		assert.Equal(t, test.expectedOutput, printer.Print(res), "Failed test with input expression %s", test.inputExpression)
+		assert.Equal(t, test.expectedOutput, printer.Print(res), "Failed test with input Expression %s", test.inputExpression)
 	}
 }
