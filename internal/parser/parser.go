@@ -10,13 +10,13 @@ import (
 /*
 	Expression Grammar
 
-expression     → equality ;
+Expression     → equality ;
 equality       → comparison ( ( "!=" | "==" ) comparison )* ;
 comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term           → factor ( ( "-" | "+" ) factor )* ;
 factor         → unary ( ( "/" | "*" ) unary )* ;
 unary          → ( "!" | "-" ) unary | primary ;
-primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" Expression ")" ;
 */
 
 // Parse starts parsing with lowest precedence part of Expression and recursively descend to highest precedence Node
@@ -67,7 +67,7 @@ func (p *Parser) varDeclaration() (s Node, err error) {
 
 	var initializer Node
 	if p.match(lexer.EQUAL) {
-		initializer, err = p.expression()
+		initializer, err = p.expressionStmt()
 		if err != nil {
 			return nil, err
 		}
@@ -86,26 +86,60 @@ func (p *Parser) varDeclaration() (s Node, err error) {
 
 // statement      → exprStmt
 // | printStmt
-// | block ;
+// | block
+// | ifStmt ;
 func (p *Parser) statement() (s Node, err error) {
 	cur := p.tokens[p.current]
 	if p.match(lexer.LEFT_BRACE) {
 		return p.block()
 	} else if p.match(lexer.PRINT) {
 		var arg Node
-		arg, err = p.expression()
+		arg, err = p.expressionStmt()
 		if err != nil {
 			return
 		}
 		s = PrintStmt{Arg: arg}
-	} else if s, err = p.expression(); err != nil { // Expression Statement
+	} else if p.match(lexer.IF) {
+		return p.ifStatement()
+	} else if s, err = p.expressionStmt(); err != nil { // Expression Statement
 		return nil, err
 	}
 
 	if !p.match(lexer.SEMICOLON) {
-		return nil, cur.GenerateTokenError("Expected ; after statement")
+		return nil, cur.GenerateTokenError("Expected ; after Statement")
 	}
 	return
+}
+
+// ifStmt → "if" "(" expressionStmt ")" statement ( "else" statement )? ;
+func (p *Parser) ifStatement() (Node, error) {
+	var err error
+	ifStmt := IfStmt{}
+	if !p.match(lexer.LEFT_PAREN) {
+		return nil, p.getPrevious().GenerateTokenError("Expected open paren after 'if' Statement")
+	}
+	ifStmt.Expression, err = p.expressionStmt()
+	if err != nil {
+		return nil, err
+	}
+
+	if !p.match(lexer.RIGHT_PAREN) {
+		return nil, p.getPrevious().GenerateTokenError("Expected closed paren after 'if' Statement Expression")
+	}
+
+	ifStmt.Statement, err = p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.match(lexer.ELSE) {
+		ifStmt.ElseStatement, err = p.statement()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return ifStmt, nil
 }
 
 // block          → "{" declaration* "}" ;
@@ -126,8 +160,8 @@ func (p *Parser) block() (Node, error) {
 	return Block{Statements: nodes}, nil
 }
 
-// expression -> assignment
-func (p *Parser) expression() (Node, error) {
+// expressionStmt -> assignment
+func (p *Parser) expressionStmt() (Node, error) {
 	return p.assignment()
 }
 
@@ -257,7 +291,7 @@ func (p *Parser) unary() (Node, error) {
 	return p.primary()
 }
 
-// primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
+// primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expressionStmt ")" | IDENTIFIER ;
 func (p *Parser) primary() (Node, error) {
 	cur := p.tokens[p.current]
 
@@ -266,7 +300,7 @@ func (p *Parser) primary() (Node, error) {
 		if p.advance() != nil {
 			return nil, cur.GenerateTokenError("BAD ERROR - cannot end program with '('")
 		}
-		inner, err := p.expression()
+		inner, err := p.expressionStmt()
 		if err != nil {
 			return nil, err
 		}
@@ -292,7 +326,7 @@ func (p *Parser) primary() (Node, error) {
 		return Variable{TokenName: cur.Lexeme}, nil
 
 	default:
-		return nil, cur.GenerateTokenError("Could not parse expression, expected a primary expression")
+		return nil, cur.GenerateTokenError("Could not parse Expression, expected a primary Expression")
 	}
 }
 

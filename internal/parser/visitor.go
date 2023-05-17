@@ -1,6 +1,7 @@
 package parser
 
 type Visitor interface {
+	VisitIfStmt(i IfStmt) error
 	VisitBlock(b Block) error
 	VisitBinary(b Binary) error
 	VisitGrouping(g Grouping) error

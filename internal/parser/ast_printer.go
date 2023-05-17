@@ -9,6 +9,11 @@ type ExprPrinter struct {
 	res string
 }
 
+func (e *ExprPrinter) VisitIfStmt(i IfStmt) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (e *ExprPrinter) VisitBlock(b Block) error {
 	//TODO implement me
 	panic("implement me")
@@ -61,7 +66,7 @@ func (e *ExprPrinter) VisitPrintStmt(p PrintStmt) error {
 	return nil
 }
 
-// Print walks through an expression and prints it in a Lisp like syntax
+// Print walks through an Expression and prints it in a Lisp like syntax
 func (e *ExprPrinter) Print(stmt Node) string {
 	if stmt == nil {
 		return ""
