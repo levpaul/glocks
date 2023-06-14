@@ -12,4 +12,5 @@ type Visitor interface {
 	VisitPrintStmt(p PrintStmt) error
 	VisitVarStmt(v VarStmt) error
 	VisitAssignment(v Assignment) error
+	VisitLogicalConjunction(v LogicalConjuction) error
 }

@@ -9,6 +9,38 @@ import (
 
 const NilStatementErrorMessage = "can not evaluate a nil expression"
 
+func (i *Interpreter) VisitLogicalConjunction(c parser.LogicalConjuction) error {
+	left, err := i.Evaluate(c.Left)
+	if err != nil {
+		return err
+	}
+
+	if c.And { // AND case
+		if isTruthy(left) {
+			right, rErr := i.Evaluate(c.Right)
+			if rErr != nil {
+				return rErr
+			}
+			i.evalRes = isTruthy(right)
+			return nil
+		}
+		i.evalRes = false
+		return nil
+	}
+
+	// Case where OR is the conjunction
+	if isTruthy(left) {
+		i.evalRes = true
+		return nil
+	}
+	right, rErr := i.Evaluate(c.Right)
+	if rErr != nil {
+		return rErr
+	}
+	i.evalRes = isTruthy(right)
+	return nil
+}
+
 func (i *Interpreter) VisitIfStmt(ifStmt parser.IfStmt) error {
 	val, err := i.Evaluate(ifStmt.Expression)
 	if err != nil {
