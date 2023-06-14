@@ -2,6 +2,16 @@ package parser
 
 import "github.com/levpaul/glocks/internal/lexer"
 
+type LogicalConjuction struct {
+	Left  Node
+	And   bool
+	Right Node
+}
+
+func (c LogicalConjuction) Accept(v Visitor) error {
+	return v.VisitLogicalConjunction(c)
+}
+
 type IfStmt struct {
 	Expression    Node
 	Statement     Node

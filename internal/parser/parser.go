@@ -168,7 +168,7 @@ func (p *Parser) expressionStmt() (Node, error) {
 // assignment -> IDENTIFIER = assignment
 // _____________ | equality
 func (p *Parser) assignment() (Node, error) {
-	expr, err := p.equality()
+	expr, err := p.logicalConjunction()
 	if err != nil {
 		return nil, err
 	}
@@ -193,6 +193,32 @@ func (p *Parser) assignment() (Node, error) {
 		TokenName: v.TokenName,
 		Value:     rhs,
 	}, nil
+}
+
+// logicalConjunction parses out "and" or "or" operators, using the same precedence for each - this
+// is opposed to C like precedence where "and" has a higher precedence than "or"
+func (p *Parser) logicalConjunction() (Node, error) {
+	left, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+
+	if !p.match(lexer.AND, lexer.OR) {
+		return left, nil
+	}
+
+	conj := &LogicalConjuction{
+		Left: left,
+		And:  p.getPrevious().Type == lexer.AND,
+	}
+
+	right, err := p.logicalConjunction()
+	if err != nil {
+		return nil, err
+	}
+
+	conj.Right = right
+	return conj, nil
 }
 
 // equality → comparison ( ( "!=" | "==" ) comparison )* ;
