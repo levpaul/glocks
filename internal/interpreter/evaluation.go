@@ -16,28 +16,28 @@ func (i *Interpreter) VisitLogicalConjunction(c parser.LogicalConjuction) error 
 	}
 
 	if c.And { // AND case
-		if isTruthy(left) {
-			right, rErr := i.Evaluate(c.Right)
-			if rErr != nil {
-				return rErr
-			}
-			i.evalRes = isTruthy(right)
+		if !isTruthy(left) { // short circuit
+			i.evalRes = left
 			return nil
 		}
-		i.evalRes = false
+		right, rErr := i.Evaluate(c.Right)
+		if rErr != nil {
+			return rErr
+		}
+		i.evalRes = right
 		return nil
 	}
 
 	// Case where OR is the conjunction
-	if isTruthy(left) {
-		i.evalRes = true
+	if isTruthy(left) { // short-circuit
+		i.evalRes = left
 		return nil
 	}
 	right, rErr := i.Evaluate(c.Right)
 	if rErr != nil {
 		return rErr
 	}
-	i.evalRes = isTruthy(right)
+	i.evalRes = right
 	return nil
 }
 
@@ -208,13 +208,13 @@ func (i *Interpreter) VisitUnary(u parser.Unary) error {
 	}
 
 	switch u.Operator.Type {
-	case lexer.BANG:
+	case lexer.MINUS:
 		val, ok := i.evalRes.(float64)
 		if !ok {
 			return fmt.Errorf("expected number with unary operator, had '%+v' instead", val)
 		}
 		i.evalRes = -val
-	case lexer.MINUS:
+	case lexer.BANG:
 		i.evalRes = isTruthy(i.evalRes)
 	default:
 		return fmt.Errorf("unexpected operator type in unary: %+v", u)
@@ -235,7 +235,7 @@ func (i *Interpreter) Evaluate(stmt parser.Node) (parser.Value, error) {
 	return retVal, nil
 }
 
-// isTruthy follows the ruby logic for truthiness
+// isTruthy follows the ruby logic for truthiness - i.e. anything not-nil is truthy
 func isTruthy(v parser.Value) bool {
 	if v == nil {
 		return false
