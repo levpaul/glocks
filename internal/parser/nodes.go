@@ -2,6 +2,15 @@ package parser
 
 import "github.com/levpaul/glocks/internal/lexer"
 
+type WhileStmt struct {
+	Expression Node
+	Body       Node
+}
+
+func (w WhileStmt) Accept(v Visitor) error {
+	return v.VisitWhileStmt(w)
+}
+
 type LogicalConjuction struct {
 	Left  Node
 	And   bool

@@ -9,6 +9,11 @@ type ExprPrinter struct {
 	res string
 }
 
+func (e *ExprPrinter) VisitWhileStmt(w WhileStmt) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (e *ExprPrinter) VisitLogicalConjunction(v LogicalConjuction) error {
 	//TODO implement me
 	panic("implement me")

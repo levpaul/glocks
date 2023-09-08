@@ -9,6 +9,24 @@ import (
 
 const NilStatementErrorMessage = "can not evaluate a nil expression"
 
+func (i *Interpreter) VisitWhileStmt(w parser.WhileStmt) error {
+	for {
+		exprRes, err := i.Evaluate(w.Expression)
+		if err != nil {
+			return err
+		}
+		if !isTruthy(exprRes) {
+			break
+		}
+
+		i.evalRes, err = i.Evaluate(w.Body)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (i *Interpreter) VisitLogicalConjunction(c parser.LogicalConjuction) error {
 	left, err := i.Evaluate(c.Left)
 	if err != nil {

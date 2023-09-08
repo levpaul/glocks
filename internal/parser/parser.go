@@ -84,31 +84,144 @@ func (p *Parser) varDeclaration() (s Node, err error) {
 	}, nil
 }
 
-// statement      → exprStmt
+// statement → exprStmt
 // | printStmt
 // | block
+// | whileStmt
+// | forStmt
 // | ifStmt ;
 func (p *Parser) statement() (s Node, err error) {
-	cur := p.tokens[p.current]
-	if p.match(lexer.LEFT_BRACE) {
+	startToken := p.tokens[p.current]
+	switch startToken.Type {
+	case lexer.LEFT_BRACE:
+		_ = p.advance()
 		return p.block()
-	} else if p.match(lexer.PRINT) {
+	case lexer.PRINT:
+		_ = p.advance()
 		var arg Node
 		arg, err = p.expressionStmt()
 		if err != nil {
 			return
 		}
 		s = PrintStmt{Arg: arg}
-	} else if p.match(lexer.IF) {
+	case lexer.WHILE:
+		_ = p.advance()
+		return p.whileStatement()
+	case lexer.FOR:
+		_ = p.advance()
+		return p.forStatement()
+	case lexer.IF:
+		_ = p.advance()
 		return p.ifStatement()
-	} else if s, err = p.expressionStmt(); err != nil { // Expression Statement
+	default:
+		// Default case is an Expression Statement
+		if s, err = p.expressionStmt(); err != nil {
+			return nil, err
+		}
+	}
+
+	if !p.match(lexer.SEMICOLON) { // exprStmt + print expect semi-colons
+		return nil, startToken.GenerateTokenError("Expected ; after Statement")
+	}
+	return
+}
+
+// forStmt        → "for" "(" ( varDecl | exprStmt | ";" )
+// expression? ";"
+// expression? ")" statement ;
+func (p *Parser) forStatement() (Node, error) {
+	var err error
+	if _, err = p.consume(lexer.LEFT_PAREN); err != nil {
 		return nil, err
 	}
 
+	var initializer Node
 	if !p.match(lexer.SEMICOLON) {
-		return nil, cur.GenerateTokenError("Expected ; after Statement")
+		if p.match(lexer.VAR) {
+			initializer, err = p.varDeclaration()
+		} else {
+			initializer, err = p.expressionStmt()
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
-	return
+
+	var condition Node
+	if !p.match(lexer.SEMICOLON) {
+		condition, err = p.expressionStmt()
+		if err != nil {
+			return nil, err
+		}
+
+		if !p.match(lexer.SEMICOLON) {
+			return nil, errors.New("Expect ';' after loop condition.")
+		}
+	}
+
+	var increment Node
+	if !p.match(lexer.RIGHT_PAREN) {
+		increment, err = p.expressionStmt()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(lexer.RIGHT_PAREN) {
+			return nil, errors.New("Expect ')' after loop increment.")
+		}
+	}
+
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	if increment != nil {
+		body = Block{Statements: []Node{
+			body,
+			increment,
+		}}
+	}
+
+	if condition == nil {
+		condition = Literal{Value: true}
+	}
+	loop := WhileStmt{
+		Body:       body,
+		Expression: condition,
+	}
+
+	if initializer == nil {
+		return loop, nil
+	}
+
+	return Block{Statements: []Node{initializer, loop}}, nil
+}
+
+// whileStmt → "while" "(" expression ")" statement ;
+func (p *Parser) whileStatement() (Node, error) {
+	var err error
+	if _, err = p.consume(lexer.LEFT_PAREN); err != nil {
+		return nil, err
+	}
+
+	expr, err := p.expressionStmt()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err = p.consume(lexer.RIGHT_PAREN); err != nil {
+		return nil, err
+	}
+
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	return WhileStmt{
+		Expression: expr,
+		Body:       body,
+	}, nil
 }
 
 // ifStmt → "if" "(" expressionStmt ")" statement ( "else" statement )? ;
@@ -142,7 +255,7 @@ func (p *Parser) ifStatement() (Node, error) {
 	return ifStmt, nil
 }
 
-// block          → "{" declaration* "}" ;
+// block → "{" declaration* "}" ;
 func (p *Parser) block() (Node, error) {
 	var nodes []Node
 	open := p.getPrevious()
@@ -395,6 +508,8 @@ func (p *Parser) match(t ...lexer.TokenType) bool {
 	return false
 }
 
+// consume looks at the next token and tries to match it to type t. If a match is successful then the parser is advanced
+// otherwise an error is returned
 func (p *Parser) consume(t lexer.TokenType) (*lexer.Token, error) {
 	cur := p.getCurrent()
 	if cur == nil {
