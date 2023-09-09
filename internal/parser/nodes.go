@@ -2,6 +2,17 @@ package parser
 
 import "github.com/levpaul/glocks/internal/lexer"
 
+type FunctionCallStmt struct {
+	Callee Node
+	Args   []Node
+}
+
+func (f FunctionCallStmt) Call()
+
+func (f FunctionCallStmt) Accept(v Visitor) error {
+	return v.VisitFunctionCallStmt(f)
+}
+
 type WhileStmt struct {
 	Expression Node
 	Body       Node

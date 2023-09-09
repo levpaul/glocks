@@ -415,7 +415,7 @@ func (p *Parser) factor() (Node, error) {
 	return res, nil
 }
 
-// unary → ( "!" | "-" ) unary | primary ;
+// unary → ( "!" | "-" ) unary | call;
 func (p *Parser) unary() (Node, error) {
 	if cur := p.tokens[p.current]; p.match(lexer.BANG, lexer.MINUS) {
 		right, err := p.primary()
@@ -428,6 +428,52 @@ func (p *Parser) unary() (Node, error) {
 		}, nil
 	}
 	return p.primary()
+}
+
+// call → primary ( "(" arguments? ")" )* ;
+func (p *Parser) call() (Node, error) {
+	expr, err := p.primary()
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		if p.match(lexer.LEFT_PAREN) {
+			expr, err = p.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return expr, nil
+		}
+	}
+}
+
+func (p *Parser) finishCall(callee Node) (Node, error) {
+	var args []Node
+	if !p.match(lexer.RIGHT_PAREN) {
+		for {
+			if len(args) >= 255 {
+				return nil, p.tokens[p.current].GenerateTokenError("Can't have more than 255 arguments.")
+			}
+			arg, err := p.expressionStmt()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(lexer.COMMA) {
+				if !p.match(lexer.RIGHT_PAREN) {
+					return nil, p.tokens[p.current].GenerateTokenError("Expected closing parenthesis after arg list in function call")
+				}
+				break
+			}
+		}
+	}
+
+	return FunctionCallStmt{
+		Callee: callee,
+		Args:   args,
+	}, nil
 }
 
 // primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expressionStmt ")" | IDENTIFIER ;

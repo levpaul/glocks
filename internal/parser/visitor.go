@@ -14,4 +14,5 @@ type Visitor interface {
 	VisitAssignment(v Assignment) error
 	VisitLogicalConjunction(v LogicalConjuction) error
 	VisitWhileStmt(w WhileStmt) error
+	VisitFunctionCallStmt(f FunctionCallStmt) error
 }
