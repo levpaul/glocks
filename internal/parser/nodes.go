@@ -1,13 +1,18 @@
 package parser
 
-import "github.com/levpaul/glocks/internal/lexer"
+import (
+	"github.com/levpaul/glocks/internal/lexer"
+)
 
 type FunctionCallStmt struct {
 	Callee Node
 	Args   []Node
 }
 
-func (f FunctionCallStmt) Call()
+func (f FunctionCallStmt) Call(i LoxInterpreter, args []Value) Value {
+	// TODO: impl... this code needs to generate AST nodes, drop in "values", evaluate nodes and return value? dynamically?
+	return nil
+}
 
 func (f FunctionCallStmt) Accept(v Visitor) error {
 	return v.VisitFunctionCallStmt(f)
@@ -102,8 +107,6 @@ func (a Assignment) Accept(visitor Visitor) error {
 	return visitor.VisitAssignment(a)
 }
 
-type Value any
-
 type Node interface {
 	Accept(Visitor) error
 }
@@ -131,4 +134,32 @@ type VarStmt struct {
 
 func (v VarStmt) Accept(visitor Visitor) error {
 	return visitor.VisitVarStmt(v)
+}
+
+type Value any
+
+type Visitor interface {
+	VisitIfStmt(i IfStmt) error
+	VisitBlock(b Block) error
+	VisitBinary(b Binary) error
+	VisitGrouping(g Grouping) error
+	VisitLiteral(l Literal) error
+	VisitUnary(u Unary) error
+	VisitVariable(v Variable) error
+	VisitExprStmt(s ExprStmt) error
+	VisitPrintStmt(p PrintStmt) error
+	VisitVarStmt(v VarStmt) error
+	VisitAssignment(v Assignment) error
+	VisitLogicalConjunction(v LogicalConjuction) error
+	VisitWhileStmt(w WhileStmt) error
+	VisitFunctionCallStmt(f FunctionCallStmt) error
+}
+
+type LoxInterpreter interface {
+	Evaluate(Node) (Value, error)
+}
+
+type LoxCallable interface {
+	Arity() int
+	Call(i LoxInterpreter, args []Value) (Value, error)
 }

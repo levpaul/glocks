@@ -427,7 +427,7 @@ func (p *Parser) unary() (Node, error) {
 			Right:    right,
 		}, nil
 	}
-	return p.primary()
+	return p.call()
 }
 
 // call → primary ( "(" arguments? ")" )* ;

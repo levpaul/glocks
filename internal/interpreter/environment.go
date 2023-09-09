@@ -10,6 +10,14 @@ type Environment struct {
 	Values    map[string]parser.Value
 }
 
+func newGlobalEnv() *Environment {
+	g := &Environment{Values: map[string]parser.Value{}}
+
+	g.Define("clock", &clock{})
+
+	return g
+}
+
 func (e *Environment) Define(name string, v parser.Value) {
 	e.Values[name] = v
 }

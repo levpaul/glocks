@@ -9,10 +9,6 @@ import (
 
 const NilStatementErrorMessage = "can not evaluate a nil expression"
 
-type LoxCallable interface {
-	Call(i *Interpreter, args []parser.Value) (parser.Value, error)
-}
-
 func (i *Interpreter) VisitFunctionCallStmt(f parser.FunctionCallStmt) error {
 	callee, err := i.Evaluate(f.Callee)
 	if err != nil {
@@ -28,10 +24,15 @@ func (i *Interpreter) VisitFunctionCallStmt(f parser.FunctionCallStmt) error {
 		args = append(args, evaluatedArg)
 	}
 
-	loxFunction, ok := callee.(LoxCallable)
+	loxFunction, ok := callee.(parser.LoxCallable)
 	if !ok {
 		return fmt.Errorf("Expected %v to be of type Callable!", callee)
 	}
+
+	if len(args) != loxFunction.Arity() {
+		return fmt.Errorf("Expected %d args to be passed to func, but only received %d.", loxFunction.Arity(), len(args))
+	}
+
 	i.evalRes, err = loxFunction.Call(i, args)
 	return err
 }

@@ -10,13 +10,15 @@ import (
 )
 
 func New(log *zap.SugaredLogger) *Interpreter {
+	globals := newGlobalEnv()
 	return &Interpreter{
 		log:        log,
 		s:          nil,
 		p:          nil,
 		astPrinter: parser.ExprPrinter{},
 		replMode:   false,
-		env:        &Environment{Values: map[string]parser.Value{}},
+		globals:    globals,
+		env:        globals, // Set initial env to Global
 	}
 }
 
@@ -27,6 +29,7 @@ type Interpreter struct {
 	astPrinter  parser.ExprPrinter
 	replMode    bool
 	printOutput io.Writer
+	globals     *Environment
 	env         *Environment
 	evalRes     any
 }
