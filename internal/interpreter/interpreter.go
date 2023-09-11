@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"errors"
 	"fmt"
 	"github.com/levpaul/glocks/internal/lexer"
 	"github.com/levpaul/glocks/internal/parser"
@@ -32,6 +33,12 @@ type Interpreter struct {
 	globals     *Environment
 	env         *Environment
 	evalRes     any
+}
+
+func (i *Interpreter) VisitFunctionDeclaration(f parser.FunctionDeclaration) error {
+	// TODO: impl - lookup func, pass in params, evaluate block
+	return errors.New("unimplemented thingamawhat")
+
 }
 
 func (i *Interpreter) Run(program string) error {

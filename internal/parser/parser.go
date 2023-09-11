@@ -52,11 +52,61 @@ func (p *Parser) Parse() ([]Node, error) {
 	return stmts, nil
 }
 
+// declaration    → funDecl
+// | varDecl
+// | statement ;
 func (p *Parser) declaration() (s Node, err error) {
+	if p.match(lexer.FUN) {
+		return p.funcDeclaration("function")
+	}
 	if p.match(lexer.VAR) {
 		return p.varDeclaration()
 	}
 	return p.statement()
+}
+
+// function       → IDENTIFIER "(" parameters? ")" block ;
+func (p *Parser) funcDeclaration(kind string) (s Node, err error) {
+	name, err := p.consume(lexer.IDENTIFIER)
+	if err != nil {
+		return nil, fmt.Errorf("expected %s name", kind)
+	}
+
+	_, err = p.consume(lexer.LEFT_PAREN)
+	if err != nil {
+		return nil, fmt.Errorf("expected a '(' after function identifier; err=%w", err)
+	}
+
+	var params []string
+	if !p.match(lexer.RIGHT_PAREN) {
+		for {
+			if len(params) >= 255 {
+				return nil, errors.New("can't have more than 255 parameters")
+			}
+
+			param, paramErr := p.consume(lexer.IDENTIFIER)
+			if paramErr != nil {
+				return nil, paramErr
+			}
+			params = append(params, param.Lexeme)
+		}
+	}
+
+	_, err = p.consume(lexer.RIGHT_PAREN)
+	if err != nil {
+		return nil, fmt.Errorf("expected a ')' after function params; err=%w", err)
+	}
+
+	body, err := p.block()
+	if err != nil {
+		return nil, err
+	}
+
+	return FunctionDeclaration{
+		Name:   name.Lexeme,
+		Params: params,
+		Body:   body,
+	}, nil
 }
 
 func (p *Parser) varDeclaration() (s Node, err error) {

@@ -4,6 +4,16 @@ import (
 	"github.com/levpaul/glocks/internal/lexer"
 )
 
+type FunctionDeclaration struct {
+	Name   string
+	Params []string
+	Body   Node
+}
+
+func (f FunctionDeclaration) Accept(v Visitor) error {
+	return v.VisitFunctionDeclaration(f)
+}
+
 type FunctionCallStmt struct {
 	Callee Node
 	Args   []Node
@@ -11,7 +21,7 @@ type FunctionCallStmt struct {
 
 func (f FunctionCallStmt) Call(i LoxInterpreter, args []Value) Value {
 	// TODO: impl... this code needs to generate AST nodes, drop in "values", evaluate nodes and return value? dynamically?
-	return nil
+	panic("implement me")
 }
 
 func (f FunctionCallStmt) Accept(v Visitor) error {
@@ -153,6 +163,7 @@ type Visitor interface {
 	VisitLogicalConjunction(v LogicalConjuction) error
 	VisitWhileStmt(w WhileStmt) error
 	VisitFunctionCallStmt(f FunctionCallStmt) error
+	VisitFunctionDeclaration(f FunctionDeclaration) error
 }
 
 type LoxInterpreter interface {
