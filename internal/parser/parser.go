@@ -89,14 +89,22 @@ func (p *Parser) funcDeclaration(kind string) (s Node, err error) {
 				return nil, paramErr
 			}
 			params = append(params, param.Lexeme)
+			if p.match(lexer.COMMA) {
+				continue
+			}
+			if p.match(lexer.RIGHT_PAREN) {
+				fmt.Println("aadf")
+				break
+			} else {
+				return nil, errors.New("Expected closing ')' after parameter list")
+			}
 		}
 	}
 
-	_, err = p.consume(lexer.RIGHT_PAREN)
+	_, err = p.consume(lexer.LEFT_BRACE)
 	if err != nil {
-		return nil, fmt.Errorf("expected a ')' after function params; err=%w", err)
+		return nil, fmt.Errorf("expected a '{' before function body; err=%w", err)
 	}
-
 	body, err := p.block()
 	if err != nil {
 		return nil, err

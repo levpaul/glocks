@@ -36,9 +36,8 @@ type Interpreter struct {
 }
 
 func (i *Interpreter) VisitFunctionDeclaration(f parser.FunctionDeclaration) error {
-	// TODO: impl - lookup func, pass in params, evaluate block
+	// TODO: impl - store func in current scope
 	return errors.New("unimplemented thingamawhat")
-
 }
 
 func (i *Interpreter) Run(program string) error {
