@@ -99,3 +99,10 @@ func TestFibonacciFor(t *testing.T) {
 	expectedOut := "0\n1\n1\n2\n3\n5\n8\n13\n21\n34\n55\n89\n144\n233\n377\n610\n987\n1597\n2584\n4181\n6765"
 	testSimpleProgramWorksWithOutput(t, program, expectedOut)
 }
+
+func TestRecursiveFunction(t *testing.T) {
+	program := `fun countSkip(n) {   if (n > 1) countSkip(n - 2);   print n; }
+countSkip(10);`
+	expectedOut := "0\n2\n4\n6\n8\n10"
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}
