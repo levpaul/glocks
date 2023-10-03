@@ -17,15 +17,9 @@ func (f FunctionDeclaration) Accept(v Visitor) error {
 }
 
 type CallExpr struct {
-	LoxCallable
 	Callee Node
 	Paren  *lexer.Token // for debugging + reporting
 	Args   []Node
-}
-
-func (f CallExpr) Call(i LoxInterpreter, args []domain.Value) domain.Value {
-	//env := environment.Environment{}
-	panic("implement me")
 }
 
 func (f CallExpr) Accept(v Visitor) error {

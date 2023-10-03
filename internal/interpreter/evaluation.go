@@ -34,10 +34,7 @@ func (i *Interpreter) VisitCallExpr(f parser.CallExpr) error {
 
 	loxFunction, ok := callee.(parser.LoxCallable)
 	if !ok {
-		i.evalRes = f.Call(i, args)
-		return nil
-
-		//return fmt.Errorf("Expected %v to be of type Callable!", callee)
+		return fmt.Errorf("Expected %v to be of type Callable!", callee)
 	}
 
 	if len(args) != loxFunction.Arity() {
