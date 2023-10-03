@@ -122,8 +122,3 @@ func (l LoxFunction) Call(i parser.LoxInterpreter, args []domain.Value) (domain.
 func (l LoxFunction) Arity() int {
 	return len(l.declaration.Params)
 }
-
-//type LoxCallable interface {
-//	Arity() int
-//	Call(i LoxInterpreter, args []domain.Value) (domain.Value, error)
-//}
