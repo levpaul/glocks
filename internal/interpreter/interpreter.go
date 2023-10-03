@@ -122,3 +122,7 @@ func (l LoxFunction) Call(i parser.LoxInterpreter, args []domain.Value) (domain.
 func (l LoxFunction) Arity() int {
 	return len(l.declaration.Params)
 }
+
+func (l LoxFunction) String() string {
+	return fmt.Sprintf("<fn %s>", l.declaration.Name)
+}
