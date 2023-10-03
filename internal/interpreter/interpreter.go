@@ -1,8 +1,10 @@
 package interpreter
 
 import (
-	"errors"
 	"fmt"
+	"github.com/levpaul/glocks/internal/builtins"
+	"github.com/levpaul/glocks/internal/domain"
+	"github.com/levpaul/glocks/internal/environment"
 	"github.com/levpaul/glocks/internal/lexer"
 	"github.com/levpaul/glocks/internal/parser"
 	"go.uber.org/zap"
@@ -30,14 +32,21 @@ type Interpreter struct {
 	astPrinter  parser.ExprPrinter
 	replMode    bool
 	printOutput io.Writer
-	globals     *Environment
-	env         *Environment
+	globals     *environment.Environment
+	env         *environment.Environment
 	evalRes     any
 }
 
-func (i *Interpreter) VisitFunctionDeclaration(f parser.FunctionDeclaration) error {
-	// TODO: impl - store func in current scope
-	return errors.New("unimplemented thingamawhat")
+func newGlobalEnv() *environment.Environment {
+	g := &environment.Environment{Values: map[string]domain.Value{}}
+
+	g.Define("clock", &builtins.Clock{})
+
+	return g
+}
+
+func (i *Interpreter) GetEnvironment() *environment.Environment {
+	return i.env
 }
 
 func (i *Interpreter) Run(program string) error {
@@ -82,3 +91,39 @@ func (i *Interpreter) runLine(line string) error {
 
 	return nil
 }
+
+func (i *Interpreter) ExecuteBlock(block parser.Block, env *environment.Environment) error {
+	originalEnv := i.env
+	defer func() { i.env = originalEnv }()
+	i.env = env
+
+	return i.VisitBlock(block)
+}
+
+type LoxFunction struct {
+	declaration parser.FunctionDeclaration
+}
+
+func (l LoxFunction) Call(i parser.LoxInterpreter, args []domain.Value) (domain.Value, error) {
+	env := environment.NewEnvironment(i.GetEnvironment())
+
+	for i, p := range l.declaration.Params {
+		env.Define(p, args[i])
+	}
+
+	block, ok := l.declaration.Body.(parser.Block)
+	if !ok {
+		return nil, fmt.Errorf("Expected function call to have associated block, but none found: '%s'", l.declaration.Body)
+	}
+
+	return nil, i.ExecuteBlock(block, env)
+}
+
+func (l LoxFunction) Arity() int {
+	return len(l.declaration.Params)
+}
+
+//type LoxCallable interface {
+//	Arity() int
+//	Call(i LoxInterpreter, args []domain.Value) (domain.Value, error)
+//}

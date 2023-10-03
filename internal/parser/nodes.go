@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"github.com/levpaul/glocks/internal/domain"
+	"github.com/levpaul/glocks/internal/environment"
 	"github.com/levpaul/glocks/internal/lexer"
 )
 
@@ -14,18 +16,20 @@ func (f FunctionDeclaration) Accept(v Visitor) error {
 	return v.VisitFunctionDeclaration(f)
 }
 
-type FunctionCallStmt struct {
+type CallExpr struct {
+	LoxCallable
 	Callee Node
+	Paren  *lexer.Token // for debugging + reporting
 	Args   []Node
 }
 
-func (f FunctionCallStmt) Call(i LoxInterpreter, args []Value) Value {
-	// TODO: impl... this code needs to generate AST nodes, drop in "values", evaluate nodes and return value? dynamically?
+func (f CallExpr) Call(i LoxInterpreter, args []domain.Value) domain.Value {
+	//env := environment.Environment{}
 	panic("implement me")
 }
 
-func (f FunctionCallStmt) Accept(v Visitor) error {
-	return v.VisitFunctionCallStmt(f)
+func (f CallExpr) Accept(v Visitor) error {
+	return v.VisitCallExpr(f)
 }
 
 type WhileStmt struct {
@@ -146,8 +150,6 @@ func (v VarStmt) Accept(visitor Visitor) error {
 	return visitor.VisitVarStmt(v)
 }
 
-type Value any
-
 type Visitor interface {
 	VisitIfStmt(i IfStmt) error
 	VisitBlock(b Block) error
@@ -162,15 +164,17 @@ type Visitor interface {
 	VisitAssignment(v Assignment) error
 	VisitLogicalConjunction(v LogicalConjuction) error
 	VisitWhileStmt(w WhileStmt) error
-	VisitFunctionCallStmt(f FunctionCallStmt) error
+	VisitCallExpr(f CallExpr) error
 	VisitFunctionDeclaration(f FunctionDeclaration) error
 }
 
 type LoxInterpreter interface {
-	Evaluate(Node) (Value, error)
+	Evaluate(Node) (domain.Value, error)
+	ExecuteBlock(Block, *environment.Environment) error
+	GetEnvironment() *environment.Environment
 }
 
 type LoxCallable interface {
 	Arity() int
-	Call(i LoxInterpreter, args []Value) (Value, error)
+	Call(i LoxInterpreter, args []domain.Value) (domain.Value, error)
 }

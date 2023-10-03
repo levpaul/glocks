@@ -1,28 +1,27 @@
-package interpreter
+package environment
 
 import (
 	"fmt"
-	"github.com/levpaul/glocks/internal/parser"
+	"github.com/levpaul/glocks/internal/domain"
 )
 
 type Environment struct {
 	Enclosing *Environment
-	Values    map[string]parser.Value
+	Values    map[string]domain.Value
 }
 
-func newGlobalEnv() *Environment {
-	g := &Environment{Values: map[string]parser.Value{}}
-
-	g.Define("clock", &clock{})
-
-	return g
+func NewEnvironment(enclosing *Environment) *Environment {
+	return &Environment{
+		Enclosing: enclosing,
+		Values:    map[string]domain.Value{},
+	}
 }
 
-func (e *Environment) Define(name string, v parser.Value) {
+func (e *Environment) Define(name string, v domain.Value) {
 	e.Values[name] = v
 }
 
-func (e *Environment) Get(name string) (parser.Value, error) {
+func (e *Environment) Get(name string) (domain.Value, error) {
 	if val, found := e.Values[name]; found {
 		return val, nil
 	}
@@ -34,7 +33,7 @@ func (e *Environment) Get(name string) (parser.Value, error) {
 	return nil, fmt.Errorf("attempted to get variable '%s' but does not exist", name)
 }
 
-func (e *Environment) Set(name string, v parser.Value) error {
+func (e *Environment) Set(name string, v domain.Value) error {
 	if _, found := e.Values[name]; !found {
 		if e.Enclosing == nil {
 			return fmt.Errorf("attempted to set variable '%s' but does not exist", name)

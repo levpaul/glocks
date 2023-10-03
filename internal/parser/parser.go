@@ -93,7 +93,6 @@ func (p *Parser) funcDeclaration(kind string) (s Node, err error) {
 				continue
 			}
 			if p.match(lexer.RIGHT_PAREN) {
-				fmt.Println("aadf")
 				break
 			} else {
 				return nil, errors.New("Expected closing ')' after parameter list")
@@ -528,9 +527,10 @@ func (p *Parser) finishCall(callee Node) (Node, error) {
 		}
 	}
 
-	return FunctionCallStmt{
+	return CallExpr{
 		Callee: callee,
 		Args:   args,
+		Paren:  p.getCurrent(),
 	}, nil
 }
 

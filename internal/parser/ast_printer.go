@@ -14,7 +14,7 @@ func (e *ExprPrinter) VisitFunctionDeclaration(f FunctionDeclaration) error {
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitFunctionCallStmt(f FunctionCallStmt) error {
+func (e *ExprPrinter) VisitCallExpr(f CallExpr) error {
 	//TODO implement me
 	panic("implement me")
 }

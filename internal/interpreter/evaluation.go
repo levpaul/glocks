@@ -3,19 +3,27 @@ package interpreter
 import (
 	"errors"
 	"fmt"
+	"github.com/levpaul/glocks/internal/domain"
+	"github.com/levpaul/glocks/internal/environment"
 	"github.com/levpaul/glocks/internal/lexer"
 	"github.com/levpaul/glocks/internal/parser"
 )
 
 const NilStatementErrorMessage = "can not evaluate a nil expression"
 
-func (i *Interpreter) VisitFunctionCallStmt(f parser.FunctionCallStmt) error {
+func (i *Interpreter) VisitFunctionDeclaration(f parser.FunctionDeclaration) error {
+	i.env.Define(f.Name, LoxFunction{declaration: f})
+	i.evalRes = nil
+	return nil
+}
+
+func (i *Interpreter) VisitCallExpr(f parser.CallExpr) error {
 	callee, err := i.Evaluate(f.Callee)
 	if err != nil {
 		return err
 	}
 
-	var args []parser.Value
+	var args []domain.Value
 	for _, a := range f.Args {
 		evaluatedArg, argErr := i.Evaluate(a)
 		if argErr != nil {
@@ -26,7 +34,10 @@ func (i *Interpreter) VisitFunctionCallStmt(f parser.FunctionCallStmt) error {
 
 	loxFunction, ok := callee.(parser.LoxCallable)
 	if !ok {
-		return fmt.Errorf("Expected %v to be of type Callable!", callee)
+		i.evalRes = f.Call(i, args)
+		return nil
+
+		//return fmt.Errorf("Expected %v to be of type Callable!", callee)
 	}
 
 	if len(args) != loxFunction.Arity() {
@@ -106,9 +117,9 @@ func (i *Interpreter) VisitIfStmt(ifStmt parser.IfStmt) error {
 
 func (i *Interpreter) VisitBlock(b parser.Block) error {
 	oldEnv := i.env
-	i.env = &Environment{
+	i.env = &environment.Environment{
 		Enclosing: oldEnv,
-		Values:    map[string]parser.Value{},
+		Values:    map[string]domain.Value{},
 	}
 	defer func() {
 		i.env = oldEnv
@@ -145,7 +156,7 @@ func (i *Interpreter) VisitVariable(v parser.Variable) (err error) {
 
 func (i *Interpreter) VisitVarStmt(v parser.VarStmt) error {
 	var err error
-	var initializer parser.Value
+	var initializer domain.Value
 	if v.Initializer != nil {
 		initializer, err = i.Evaluate(v.Initializer)
 		if err != nil {
@@ -268,7 +279,7 @@ func (i *Interpreter) VisitUnary(u parser.Unary) error {
 	return nil
 }
 
-func (i *Interpreter) Evaluate(stmt parser.Node) (parser.Value, error) {
+func (i *Interpreter) Evaluate(stmt parser.Node) (domain.Value, error) {
 	if stmt == nil {
 		return nil, errors.New(NilStatementErrorMessage)
 	}
@@ -282,7 +293,7 @@ func (i *Interpreter) Evaluate(stmt parser.Node) (parser.Value, error) {
 }
 
 // isTruthy follows the ruby logic for truthiness - i.e. anything not-nil is truthy
-func isTruthy(v parser.Value) bool {
+func isTruthy(v domain.Value) bool {
 	if v == nil {
 		return false
 	}
@@ -292,7 +303,7 @@ func isTruthy(v parser.Value) bool {
 	return true
 }
 
-func isEqual(v1, v2 parser.Value) bool {
+func isEqual(v1, v2 domain.Value) bool {
 	if v1 == nil && v2 == nil {
 		return true
 	}
@@ -303,7 +314,7 @@ func isEqual(v1, v2 parser.Value) bool {
 	return v1 == v2
 }
 
-func (i *Interpreter) validateBothNumber(left parser.Value, right parser.Value) error {
+func (i *Interpreter) validateBothNumber(left domain.Value, right domain.Value) error {
 	// Benchmarks show that using a custom struct for values, where a member stores the specific underlying type
 	// would increase the performance here by 30%, but it means trading off extra memory per value and still doesn't
 	// help during evaluation anyway, as we need to type assert to run operations like addition etc, could be cool
@@ -324,7 +335,7 @@ func (i *Interpreter) validateBothNumber(left parser.Value, right parser.Value) 
 	return nil
 }
 
-func (i *Interpreter) validateBothString(left parser.Value, right parser.Value) error {
+func (i *Interpreter) validateBothString(left domain.Value, right domain.Value) error {
 	_, ok := left.(string)
 	if !ok {
 		return fmt.Errorf("%v is not a string", left)
