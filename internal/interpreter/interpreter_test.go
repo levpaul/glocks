@@ -106,3 +106,26 @@ countSkip(10);`
 	expectedOut := "0\n2\n4\n6\n8\n10"
 	testSimpleProgramWorksWithOutput(t, program, expectedOut)
 }
+
+func TestReturnStmt(t *testing.T) {
+	program := `fun addTwo(n) { return n + 2; }
+print addTwo(1);`
+	expectedOut := "3"
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}
+
+func TestUnexpectedLoneReturnStmt(t *testing.T) {
+	program := `return 4;`
+	out, err := testSimpleProgram(program)
+	require.NotNil(t, err)
+	assert.Errorf(t, err, "Unexpected 'return' expression found. Expected to be within a function")
+	assert.Empty(t, out)
+}
+
+func TestUnexpectedReturnStmtInBlock(t *testing.T) {
+	program := `{var x; x = 4; return x; var pointless;}`
+	out, err := testSimpleProgram(program)
+	require.NotNil(t, err)
+	assert.Errorf(t, err, "Unexpected 'return' expression found. Expected to be within a function")
+	assert.Empty(t, out)
+}

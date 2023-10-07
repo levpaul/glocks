@@ -1,2 +1,4 @@
 .idea
 *.lox
+*.swp
+prog*

@@ -82,6 +82,9 @@ func (i *Interpreter) runLine(line string) error {
 
 		result, err := i.Evaluate(stmt)
 		if err != nil {
+			if _, isEarlyRet := err.(EarlyReturn); isEarlyRet {
+				return fmt.Errorf("Unexpected 'return' expression found. Expected to be within a function")
+			}
 			return fmt.Errorf("failed to evaluate expression: '%w'", err)
 		}
 		if i.replMode && result != nil { // only print our statements which evaluate to a Value
@@ -98,31 +101,4 @@ func (i *Interpreter) ExecuteBlock(block parser.Block, env *environment.Environm
 	i.env = env
 
 	return i.VisitBlock(block)
-}
-
-type LoxFunction struct {
-	declaration parser.FunctionDeclaration
-}
-
-func (l LoxFunction) Call(i parser.LoxInterpreter, args []domain.Value) (domain.Value, error) {
-	env := environment.NewEnvironment(i.GetEnvironment())
-
-	for i, p := range l.declaration.Params {
-		env.Define(p, args[i])
-	}
-
-	block, ok := l.declaration.Body.(parser.Block)
-	if !ok {
-		return nil, fmt.Errorf("Expected function call to have associated block, but none found: '%s'", l.declaration.Body)
-	}
-
-	return nil, i.ExecuteBlock(block, env)
-}
-
-func (l LoxFunction) Arity() int {
-	return len(l.declaration.Params)
-}
-
-func (l LoxFunction) String() string {
-	return fmt.Sprintf("<fn %s>", l.declaration.Name)
 }

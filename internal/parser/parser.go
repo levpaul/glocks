@@ -7,18 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-/*
-	Expression Grammar
-
-Expression     → equality ;
-equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-term           → factor ( ( "-" | "+" ) factor )* ;
-factor         → unary ( ( "/" | "*" ) unary )* ;
-unary          → ( "!" | "-" ) unary | primary ;
-primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" Expression ")" ;
-*/
-
 // Parse starts parsing with lowest precedence part of Expression and recursively descend to highest precedence Node
 // This is a Recursive Decent Parser
 type Parser struct {
@@ -142,13 +130,15 @@ func (p *Parser) varDeclaration() (s Node, err error) {
 }
 
 // statement → exprStmt
-// | printStmt
-// | block
-// | whileStmt
 // | forStmt
-// | ifStmt ;
+// | ifStmt
+// | printStmt
+// | returnStmt
+// | whileStmt
+// | block
 func (p *Parser) statement() (s Node, err error) {
 	startToken := p.tokens[p.current]
+	// Take care to fall through if case requires a semi-colon
 	switch startToken.Type {
 	case lexer.LEFT_BRACE:
 		_ = p.advance()
@@ -164,6 +154,9 @@ func (p *Parser) statement() (s Node, err error) {
 	case lexer.WHILE:
 		_ = p.advance()
 		return p.whileStatement()
+	case lexer.RETURN:
+		_ = p.advance()
+		s, err = p.returnStatement()
 	case lexer.FOR:
 		_ = p.advance()
 		return p.forStatement()
@@ -177,7 +170,7 @@ func (p *Parser) statement() (s Node, err error) {
 		}
 	}
 
-	if !p.match(lexer.SEMICOLON) { // exprStmt + print expect semi-colons
+	if err == nil && !p.match(lexer.SEMICOLON) { // exprStmt, print + return expect semi-colons
 		return nil, startToken.GenerateTokenError("Expected ; after Statement")
 	}
 	return
@@ -279,6 +272,19 @@ func (p *Parser) whileStatement() (Node, error) {
 		Expression: expr,
 		Body:       body,
 	}, nil
+}
+
+// returnStmt → "return" expression? ";"
+func (p *Parser) returnStatement() (Node, error) {
+	if p.peekMatch(lexer.SEMICOLON) {
+		return ReturnStmt{}, nil
+	}
+	expr, err := p.expressionStmt()
+	if err != nil {
+		return nil, err
+	}
+
+	return ReturnStmt{Expression: expr}, nil
 }
 
 // ifStmt → "if" "(" expressionStmt ")" statement ( "else" statement )? ;
@@ -593,6 +599,22 @@ func (p *Parser) getPrevious() *lexer.Token {
 		return nil
 	}
 	return p.tokens[p.current-1]
+}
+
+// peekMatch will attempt to match one of many token types and if it does, will NOT advance the parser head
+// and return true, else returns false
+func (p *Parser) peekMatch(t ...lexer.TokenType) bool {
+	for _, tt := range t {
+		cur := p.getCurrent()
+		if cur == nil {
+			p.log.Error("Tried to match where there is no further input")
+			return false
+		}
+		if cur.Type == tt {
+			return true
+		}
+	}
+	return false
 }
 
 // match will attempt to match one of many token types and if it does, will advance the parser head

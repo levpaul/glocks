@@ -11,6 +11,27 @@ import (
 
 const NilStatementErrorMessage = "can not evaluate a nil expression"
 
+type EarlyReturn struct {
+	result domain.Value
+}
+
+func (e EarlyReturn) Error() string {
+	return fmt.Sprintf("Returned early from a function with value '%v'", e.result)
+}
+
+func (i *Interpreter) VisitReturnStmt(r parser.ReturnStmt) error {
+	var err error
+	earlyReturn := EarlyReturn{}
+	// return here to last func call
+	if r.Expression != nil {
+		earlyReturn.result, err = i.Evaluate(r.Expression)
+		if err != nil {
+			return err
+		}
+	}
+	return earlyReturn
+}
+
 func (i *Interpreter) VisitFunctionDeclaration(f parser.FunctionDeclaration) error {
 	i.env.Define(f.Name, LoxFunction{declaration: f})
 	i.evalRes = nil

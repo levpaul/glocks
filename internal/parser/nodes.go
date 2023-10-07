@@ -6,6 +6,14 @@ import (
 	"github.com/levpaul/glocks/internal/lexer"
 )
 
+type ReturnStmt struct {
+	Expression Node
+}
+
+func (r ReturnStmt) Accept(v Visitor) error {
+	return v.VisitReturnStmt(r)
+}
+
 type FunctionDeclaration struct {
 	Name   string
 	Params []string
@@ -160,6 +168,7 @@ type Visitor interface {
 	VisitWhileStmt(w WhileStmt) error
 	VisitCallExpr(f CallExpr) error
 	VisitFunctionDeclaration(f FunctionDeclaration) error
+	VisitReturnStmt(r ReturnStmt) error
 }
 
 type LoxInterpreter interface {

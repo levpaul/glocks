@@ -9,6 +9,11 @@ type ExprPrinter struct {
 	res string
 }
 
+func (e *ExprPrinter) VisitReturnStmt(r ReturnStmt) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (e *ExprPrinter) VisitFunctionDeclaration(f FunctionDeclaration) error {
 	//TODO implement me
 	panic("implement me")
