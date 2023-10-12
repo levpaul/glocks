@@ -9,7 +9,6 @@ import (
 	"github.com/levpaul/glocks/internal/parser"
 	"go.uber.org/zap"
 	"io"
-	"strings"
 )
 
 func New(log *zap.SugaredLogger) *Interpreter {
@@ -51,18 +50,13 @@ func (i *Interpreter) GetEnvironment() *environment.Environment {
 
 func (i *Interpreter) Run(program string) error {
 	var err error
-	lineNumber := 1
-	for _, line := range strings.Split(program, "\n") {
-		if err = i.runLine(line); err != nil {
-			i.log.With("error", err).
-				Errorf("Failed to run line number %d; line:\n%s\n", lineNumber, line)
-			return err
-		}
-
-		lineNumber++
+	if err = i.runLine(program); err != nil {
+		i.log.With("error", err).
+			Errorf("Failed to run program:\n%s\n", program)
+		return err
 	}
 
-	i.log.Infof("Successfully ran %d lines of code'\n", lineNumber)
+	i.log.Info("Successfully ran program")
 	return nil
 }
 

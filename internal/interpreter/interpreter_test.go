@@ -123,9 +123,26 @@ func TestUnexpectedLoneReturnStmt(t *testing.T) {
 }
 
 func TestUnexpectedReturnStmtInBlock(t *testing.T) {
-	program := `{var x; x = 4; return x; var pointless;}`
+	program := `{
+	var x;
+	x = 4;
+	return x;
+	var pointless;
+}`
 	out, err := testSimpleProgram(program)
 	require.NotNil(t, err)
-	assert.Errorf(t, err, "Unexpected 'return' expression found. Expected to be within a function")
+	assert.EqualError(t, err, "Unexpected 'return' expression found. Expected to be within a function")
+	assert.Empty(t, out)
+}
+
+func TestErrorMessageLineNumber(t *testing.T) {
+	program := `{
+	var x;
+	x = 4
+	var pointless;
+}`
+	out, err := testSimpleProgram(program)
+	require.NotNil(t, err)
+	assert.EqualError(t, err, "failed to parse line, err='Expected ; after Statement. Line 3. Token 'x''")
 	assert.Empty(t, out)
 }

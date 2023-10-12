@@ -229,7 +229,7 @@ func (s *Scanner) addLiteralToken(t TokenType, lit any) {
 		Type:    t,
 		Lexeme:  s.source[s.start:s.current],
 		Literal: lit,
-		Line:    s.current,
+		Line:    s.line,
 	})
 }
 
