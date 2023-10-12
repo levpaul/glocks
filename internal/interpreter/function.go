@@ -9,13 +9,12 @@ import (
 
 type LoxFunction struct {
 	declaration parser.FunctionDeclaration
+	env         environment.Environment
 }
 
 func (l LoxFunction) Call(i parser.LoxInterpreter, args []domain.Value) (domain.Value, error) {
-	env := environment.NewEnvironment(i.GetEnvironment())
-
 	for idx, p := range l.declaration.Params {
-		env.Define(p, args[idx])
+		l.env.Define(p, args[idx])
 	}
 
 	block, ok := l.declaration.Body.(parser.Block)
@@ -23,7 +22,7 @@ func (l LoxFunction) Call(i parser.LoxInterpreter, args []domain.Value) (domain.
 		return nil, fmt.Errorf("Expected function call to have associated block, but none found: '%s'", l.declaration.Body)
 	}
 
-	blockErr := i.ExecuteBlock(block, env)
+	blockErr := i.ExecuteBlock(block, &l.env)
 	if blockErr == nil {
 		return nil, nil
 	}

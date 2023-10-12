@@ -44,3 +44,15 @@ func (e *Environment) Set(name string, v domain.Value) error {
 	e.Values[name] = v
 	return nil
 }
+
+func (e *Environment) Clone() Environment {
+	newEnv := Environment{
+		Enclosing: e.Enclosing,
+		Values:    map[string]domain.Value{},
+	}
+
+	for k, v := range e.Values {
+		newEnv.Values[k] = v
+	}
+	return newEnv
+}

@@ -146,3 +146,58 @@ func TestErrorMessageLineNumber(t *testing.T) {
 	assert.EqualError(t, err, "failed to parse line, err='Expected ; after Statement. Line 3. Token 'x''")
 	assert.Empty(t, out)
 }
+
+func TestGlobalVarsInFunc(t *testing.T) {
+	program := `
+var i = 0;
+fun inc() {
+  i = i + 1;
+}
+
+print i;
+inc();
+print i;
+`
+	out, err := testSimpleProgram(program)
+	require.Nil(t, err)
+	assert.Equal(t, "0\n1", out)
+}
+
+func TestFuncPtrReturn(t *testing.T) {
+	program := `
+fun getNest() {
+  fun nested() {
+    print "I am nested";
+  }
+  return nested;
+}
+
+var x = getNest();
+print x;
+x();
+`
+	out, err := testSimpleProgram(program)
+	require.Nil(t, err)
+	assert.Equal(t, "<fn nested>\nI am nested", out)
+}
+
+func TestClosureProgram(t *testing.T) {
+	program := `
+fun makeCounter() {
+  var i = 0;
+  fun count() {
+    i = i + 1;
+    print i;
+  }
+
+  return count;
+}
+
+var counter = makeCounter();
+counter(); // "1".
+counter(); // "2".
+`
+	out, err := testSimpleProgram(program)
+	require.Nil(t, err)
+	assert.Equal(t, "1\n2", out)
+}

@@ -89,6 +89,7 @@ func (i *Interpreter) runLine(line string) error {
 	return nil
 }
 
+// ExecuteBlock takes a Block and an Environment, executing Block with specific Environment env
 func (i *Interpreter) ExecuteBlock(block parser.Block, env *environment.Environment) error {
 	originalEnv := i.env
 	defer func() { i.env = originalEnv }()

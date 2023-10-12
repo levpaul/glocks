@@ -33,7 +33,10 @@ func (i *Interpreter) VisitReturnStmt(r parser.ReturnStmt) error {
 }
 
 func (i *Interpreter) VisitFunctionDeclaration(f parser.FunctionDeclaration) error {
-	i.env.Define(f.Name, LoxFunction{declaration: f})
+	i.env.Define(f.Name, LoxFunction{
+		declaration: f,
+		env:         i.env.Clone(),
+	})
 	i.evalRes = nil
 	return nil
 }
@@ -134,6 +137,7 @@ func (i *Interpreter) VisitIfStmt(ifStmt parser.IfStmt) error {
 }
 
 func (i *Interpreter) VisitBlock(b parser.Block) error {
+	// Create a new environment for execution of Block b
 	oldEnv := i.env
 	i.env = &environment.Environment{
 		Enclosing: oldEnv,
