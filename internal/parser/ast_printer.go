@@ -82,10 +82,6 @@ func (e *ExprPrinter) VisitUnary(u Unary) error {
 	return nil
 }
 
-func (e *ExprPrinter) VisitExprStmt(exprStmt ExprStmt) error {
-	return exprStmt.E.Accept(e)
-}
-
 func (e *ExprPrinter) VisitPrintStmt(p PrintStmt) error {
 	e.res = e.parenthesize("print", p.Arg)
 	return nil

@@ -189,10 +189,6 @@ func (i *Interpreter) VisitVarStmt(v parser.VarStmt) error {
 	return nil
 }
 
-func (i *Interpreter) VisitExprStmt(s parser.ExprStmt) error {
-	return s.E.Accept(i)
-}
-
 func (i *Interpreter) VisitPrintStmt(p parser.PrintStmt) error {
 	err := p.Arg.Accept(i)
 	if err != nil {

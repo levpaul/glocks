@@ -127,14 +127,6 @@ type Node interface {
 	Accept(Visitor) error
 }
 
-type ExprStmt struct {
-	E Node
-}
-
-func (e ExprStmt) Accept(v Visitor) error {
-	return v.VisitExprStmt(e)
-}
-
 type PrintStmt struct {
 	Arg Node
 }
@@ -160,7 +152,6 @@ type Visitor interface {
 	VisitLiteral(l Literal) error
 	VisitUnary(u Unary) error
 	VisitVariable(v Variable) error
-	VisitExprStmt(s ExprStmt) error
 	VisitPrintStmt(p PrintStmt) error
 	VisitVarStmt(v VarStmt) error
 	VisitAssignment(v Assignment) error
