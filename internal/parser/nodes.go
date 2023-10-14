@@ -10,17 +10,17 @@ type ReturnStmt struct {
 	Expression Node
 }
 
-func (r ReturnStmt) Accept(v Visitor) error {
+func (r *ReturnStmt) Accept(v Visitor) error {
 	return v.VisitReturnStmt(r)
 }
 
 type FunctionDeclaration struct {
 	Name   string
 	Params []string
-	Body   Node
+	Body   []Node
 }
 
-func (f FunctionDeclaration) Accept(v Visitor) error {
+func (f *FunctionDeclaration) Accept(v Visitor) error {
 	return v.VisitFunctionDeclaration(f)
 }
 
@@ -30,7 +30,7 @@ type CallExpr struct {
 	Args   []Node
 }
 
-func (f CallExpr) Accept(v Visitor) error {
+func (f *CallExpr) Accept(v Visitor) error {
 	return v.VisitCallExpr(f)
 }
 
@@ -39,7 +39,7 @@ type WhileStmt struct {
 	Body       Node
 }
 
-func (w WhileStmt) Accept(v Visitor) error {
+func (w *WhileStmt) Accept(v Visitor) error {
 	return v.VisitWhileStmt(w)
 }
 
@@ -49,7 +49,7 @@ type LogicalConjuction struct {
 	Right Node
 }
 
-func (c LogicalConjuction) Accept(v Visitor) error {
+func (c *LogicalConjuction) Accept(v Visitor) error {
 	return v.VisitLogicalConjunction(c)
 }
 
@@ -59,7 +59,7 @@ type IfStmt struct {
 	ElseStatement Node
 }
 
-func (i IfStmt) Accept(v Visitor) error {
+func (i *IfStmt) Accept(v Visitor) error {
 	return v.VisitIfStmt(i)
 }
 
@@ -67,7 +67,7 @@ type Block struct {
 	Statements []Node
 }
 
-func (b Block) Accept(v Visitor) error {
+func (b *Block) Accept(v Visitor) error {
 	return v.VisitBlock(b)
 }
 
@@ -77,7 +77,7 @@ type Binary struct {
 	Operator *lexer.Token
 }
 
-func (b Binary) Accept(v Visitor) error {
+func (b *Binary) Accept(v Visitor) error {
 	return v.VisitBinary(b)
 }
 
@@ -85,7 +85,7 @@ type Grouping struct {
 	Expression Node
 }
 
-func (g Grouping) Accept(v Visitor) error {
+func (g *Grouping) Accept(v Visitor) error {
 	return v.VisitGrouping(g)
 }
 
@@ -93,7 +93,7 @@ type Literal struct {
 	Value any // Probably make a union type here
 }
 
-func (l Literal) Accept(v Visitor) error {
+func (l *Literal) Accept(v Visitor) error {
 	return v.VisitLiteral(l)
 }
 
@@ -102,7 +102,7 @@ type Unary struct {
 	Right    Node
 }
 
-func (u Unary) Accept(v Visitor) error {
+func (u *Unary) Accept(v Visitor) error {
 	return v.VisitUnary(u)
 }
 
@@ -110,7 +110,7 @@ type Variable struct {
 	TokenName string
 }
 
-func (v Variable) Accept(visitor Visitor) error {
+func (v *Variable) Accept(visitor Visitor) error {
 	return visitor.VisitVariable(v)
 }
 
@@ -119,7 +119,7 @@ type Assignment struct {
 	Value     Node
 }
 
-func (a Assignment) Accept(visitor Visitor) error {
+func (a *Assignment) Accept(visitor Visitor) error {
 	return visitor.VisitAssignment(a)
 }
 
@@ -131,7 +131,7 @@ type PrintStmt struct {
 	Arg Node
 }
 
-func (p PrintStmt) Accept(v Visitor) error {
+func (p *PrintStmt) Accept(v Visitor) error {
 	return v.VisitPrintStmt(p)
 }
 
@@ -140,31 +140,31 @@ type VarStmt struct {
 	Initializer Node
 }
 
-func (v VarStmt) Accept(visitor Visitor) error {
+func (v *VarStmt) Accept(visitor Visitor) error {
 	return visitor.VisitVarStmt(v)
 }
 
 type Visitor interface {
-	VisitIfStmt(i IfStmt) error
-	VisitBlock(b Block) error
-	VisitBinary(b Binary) error
-	VisitGrouping(g Grouping) error
-	VisitLiteral(l Literal) error
-	VisitUnary(u Unary) error
-	VisitVariable(v Variable) error
-	VisitPrintStmt(p PrintStmt) error
-	VisitVarStmt(v VarStmt) error
-	VisitAssignment(v Assignment) error
-	VisitLogicalConjunction(v LogicalConjuction) error
-	VisitWhileStmt(w WhileStmt) error
-	VisitCallExpr(f CallExpr) error
-	VisitFunctionDeclaration(f FunctionDeclaration) error
-	VisitReturnStmt(r ReturnStmt) error
+	VisitIfStmt(i *IfStmt) error
+	VisitBlock(b *Block) error
+	VisitBinary(b *Binary) error
+	VisitGrouping(g *Grouping) error
+	VisitLiteral(l *Literal) error
+	VisitUnary(u *Unary) error
+	VisitVariable(v *Variable) error
+	VisitPrintStmt(p *PrintStmt) error
+	VisitVarStmt(v *VarStmt) error
+	VisitAssignment(v *Assignment) error
+	VisitLogicalConjunction(v *LogicalConjuction) error
+	VisitWhileStmt(w *WhileStmt) error
+	VisitCallExpr(f *CallExpr) error
+	VisitFunctionDeclaration(f *FunctionDeclaration) error
+	VisitReturnStmt(r *ReturnStmt) error
 }
 
 type LoxInterpreter interface {
 	Evaluate(Node) (domain.Value, error)
-	ExecuteBlock(Block, *environment.Environment) error
+	ExecuteBlock(*Block, *environment.Environment) error
 	GetEnvironment() *environment.Environment
 }
 

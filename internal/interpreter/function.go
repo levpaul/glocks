@@ -8,21 +8,17 @@ import (
 )
 
 type LoxFunction struct {
-	declaration parser.FunctionDeclaration
-	env         environment.Environment
+	declaration *parser.FunctionDeclaration
+	closure     *environment.Environment
 }
 
 func (l LoxFunction) Call(i parser.LoxInterpreter, args []domain.Value) (domain.Value, error) {
+	env := environment.NewEnvironment(l.closure)
 	for idx, p := range l.declaration.Params {
-		l.env.Define(p, args[idx])
+		env.Define(p, args[idx])
 	}
 
-	block, ok := l.declaration.Body.(parser.Block)
-	if !ok {
-		return nil, fmt.Errorf("Expected function call to have associated block, but none found: '%s'", l.declaration.Body)
-	}
-
-	blockErr := i.ExecuteBlock(block, &l.env)
+	blockErr := i.ExecuteBlock(&parser.Block{l.declaration.Body}, env)
 	if blockErr == nil {
 		return nil, nil
 	}

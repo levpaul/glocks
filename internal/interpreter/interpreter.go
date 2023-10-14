@@ -20,6 +20,7 @@ func New(log *zap.SugaredLogger) *Interpreter {
 		astPrinter: parser.ExprPrinter{},
 		replMode:   false,
 		globals:    globals,
+		locals:     map[parser.Node]int{},
 		env:        globals, // Set initial env to Global
 	}
 }
@@ -28,11 +29,13 @@ type Interpreter struct {
 	log         *zap.SugaredLogger
 	s           *lexer.Scanner
 	p           *parser.Parser
+	r           *Resolver
 	astPrinter  parser.ExprPrinter
 	replMode    bool
 	printOutput io.Writer
 	globals     *environment.Environment
 	env         *environment.Environment
+	locals      map[parser.Node]int
 	evalRes     any
 }
 
@@ -61,14 +64,21 @@ func (i *Interpreter) Run(program string) error {
 }
 
 func (i *Interpreter) runLine(line string) error {
-	// TODO: add reset func to scanner/parser
 	i.s = lexer.NewScanner(line, i.log)
 	tokens := i.s.ScanTokens()
+
 	i.p = parser.NewParser(i.log, tokens)
 	stmts, err := i.p.Parse()
 	if err != nil {
 		return fmt.Errorf("failed to parse line, err='%w'", err)
 	}
+
+	i.r = &Resolver{i: i, scopes: []Scope{}}
+	err = i.r.resolveNodes(stmts)
+	if err != nil {
+		return fmt.Errorf("Static Analysis [Resolver] FAILURE, err='%w'", err)
+	}
+
 	for _, stmt := range stmts {
 		if i.replMode && i.log.Level() <= zap.DebugLevel {
 			i.log.Debugf("AST repr of input: %s", i.astPrinter.Print(stmt))
@@ -90,10 +100,21 @@ func (i *Interpreter) runLine(line string) error {
 }
 
 // ExecuteBlock takes a Block and an Environment, executing Block with specific Environment env
-func (i *Interpreter) ExecuteBlock(block parser.Block, env *environment.Environment) error {
-	originalEnv := i.env
-	defer func() { i.env = originalEnv }()
+func (i *Interpreter) ExecuteBlock(block *parser.Block, env *environment.Environment) error {
+	oldEnv := i.env
 	i.env = env
-
+	defer func() { i.env = oldEnv }()
 	return i.VisitBlock(block)
+}
+
+func (i *Interpreter) resolve(node parser.Node, depth int) {
+	i.locals[node] = depth
+}
+
+func (i *Interpreter) lookUpVariable(name string, node parser.Node) (domain.Value, error) {
+	if distance, exists := i.locals[node]; exists {
+		return i.env.GetAt(distance, name)
+	}
+
+	return i.globals.Get(name)
 }

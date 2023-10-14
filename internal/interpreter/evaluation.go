@@ -19,7 +19,7 @@ func (e EarlyReturn) Error() string {
 	return fmt.Sprintf("Returned early from a function with value '%v'", e.result)
 }
 
-func (i *Interpreter) VisitReturnStmt(r parser.ReturnStmt) error {
+func (i *Interpreter) VisitReturnStmt(r *parser.ReturnStmt) error {
 	var err error
 	earlyReturn := EarlyReturn{}
 	// return here to last func call
@@ -32,16 +32,16 @@ func (i *Interpreter) VisitReturnStmt(r parser.ReturnStmt) error {
 	return earlyReturn
 }
 
-func (i *Interpreter) VisitFunctionDeclaration(f parser.FunctionDeclaration) error {
+func (i *Interpreter) VisitFunctionDeclaration(f *parser.FunctionDeclaration) error {
 	i.env.Define(f.Name, LoxFunction{
 		declaration: f,
-		env:         i.env.Clone(),
+		closure:     i.env,
 	})
 	i.evalRes = nil
 	return nil
 }
 
-func (i *Interpreter) VisitCallExpr(f parser.CallExpr) error {
+func (i *Interpreter) VisitCallExpr(f *parser.CallExpr) error {
 	callee, err := i.Evaluate(f.Callee)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (i *Interpreter) VisitCallExpr(f parser.CallExpr) error {
 	return err
 }
 
-func (i *Interpreter) VisitWhileStmt(w parser.WhileStmt) error {
+func (i *Interpreter) VisitWhileStmt(w *parser.WhileStmt) error {
 	for {
 		exprRes, err := i.Evaluate(w.Expression)
 		if err != nil {
@@ -87,7 +87,7 @@ func (i *Interpreter) VisitWhileStmt(w parser.WhileStmt) error {
 	return nil
 }
 
-func (i *Interpreter) VisitLogicalConjunction(c parser.LogicalConjuction) error {
+func (i *Interpreter) VisitLogicalConjunction(c *parser.LogicalConjuction) error {
 	left, err := i.Evaluate(c.Left)
 	if err != nil {
 		return err
@@ -119,7 +119,7 @@ func (i *Interpreter) VisitLogicalConjunction(c parser.LogicalConjuction) error 
 	return nil
 }
 
-func (i *Interpreter) VisitIfStmt(ifStmt parser.IfStmt) error {
+func (i *Interpreter) VisitIfStmt(ifStmt *parser.IfStmt) error {
 	val, err := i.Evaluate(ifStmt.Expression)
 	if err != nil {
 		return err
@@ -136,7 +136,7 @@ func (i *Interpreter) VisitIfStmt(ifStmt parser.IfStmt) error {
 	return ifStmt.ElseStatement.Accept(i)
 }
 
-func (i *Interpreter) VisitBlock(b parser.Block) error {
+func (i *Interpreter) VisitBlock(b *parser.Block) error {
 	// Create a new environment for execution of Block b
 	oldEnv := i.env
 	i.env = &environment.Environment{
@@ -159,24 +159,35 @@ func (i *Interpreter) VisitBlock(b parser.Block) error {
 	return nil
 }
 
-func (i *Interpreter) VisitAssignment(a parser.Assignment) error {
+func (i *Interpreter) VisitAssignment(a *parser.Assignment) error {
 	v, err := i.Evaluate(a.Value)
 	if err != nil {
 		return err
 	}
-	if err = i.env.Set(a.TokenName, v); err != nil {
-		return err
+
+	if dist, exists := i.locals[a]; exists {
+		if err = i.env.SetAt(dist, a.TokenName, v); err != nil {
+			return err
+		}
+	} else {
+		if err = i.globals.Set(a.TokenName, v); err != nil {
+			return err
+		}
 	}
 	i.evalRes = v
 	return nil
 }
 
-func (i *Interpreter) VisitVariable(v parser.Variable) (err error) {
-	i.evalRes, err = i.env.Get(v.TokenName)
-	return
+func (i *Interpreter) VisitVariable(v *parser.Variable) error {
+	val, err := i.lookUpVariable(v.TokenName, v)
+	if err != nil {
+		return err
+	}
+	i.evalRes = val
+	return nil
 }
 
-func (i *Interpreter) VisitVarStmt(v parser.VarStmt) error {
+func (i *Interpreter) VisitVarStmt(v *parser.VarStmt) error {
 	var err error
 	var initializer domain.Value
 	if v.Initializer != nil {
@@ -189,7 +200,7 @@ func (i *Interpreter) VisitVarStmt(v parser.VarStmt) error {
 	return nil
 }
 
-func (i *Interpreter) VisitPrintStmt(p parser.PrintStmt) error {
+func (i *Interpreter) VisitPrintStmt(p *parser.PrintStmt) error {
 	err := p.Arg.Accept(i)
 	if err != nil {
 		return err
@@ -199,7 +210,7 @@ func (i *Interpreter) VisitPrintStmt(p parser.PrintStmt) error {
 	return nil
 }
 
-func (i *Interpreter) VisitBinary(b parser.Binary) error {
+func (i *Interpreter) VisitBinary(b *parser.Binary) error {
 	left, err := i.Evaluate(b.Left)
 	if err != nil {
 		return err
@@ -264,18 +275,18 @@ func (i *Interpreter) VisitBinary(b parser.Binary) error {
 	return nil
 }
 
-func (i *Interpreter) VisitGrouping(g parser.Grouping) error {
+func (i *Interpreter) VisitGrouping(g *parser.Grouping) error {
 	var err error
 	i.evalRes, err = i.Evaluate(g.Expression)
 	return err
 }
 
-func (i *Interpreter) VisitLiteral(l parser.Literal) error {
+func (i *Interpreter) VisitLiteral(l *parser.Literal) error {
 	i.evalRes = l.Value
 	return nil
 }
 
-func (i *Interpreter) VisitUnary(u parser.Unary) error {
+func (i *Interpreter) VisitUnary(u *parser.Unary) error {
 	var err error
 	i.evalRes, err = i.Evaluate(u.Right)
 	if err != nil {

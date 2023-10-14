@@ -97,10 +97,15 @@ func (p *Parser) funcDeclaration(kind string) (s Node, err error) {
 		return nil, err
 	}
 
-	return FunctionDeclaration{
+	bodyInf, ok := body.(*Block)
+	if !ok {
+		return nil, errors.New("expected a block following function, did not get one")
+	}
+
+	return &FunctionDeclaration{
 		Name:   name.Lexeme,
 		Params: params,
-		Body:   body,
+		Body:   bodyInf.Statements,
 	}, nil
 }
 
@@ -150,7 +155,7 @@ func (p *Parser) statement() (s Node, err error) {
 		if err != nil {
 			return
 		}
-		s = PrintStmt{Arg: arg}
+		s = &PrintStmt{Arg: arg}
 	case lexer.WHILE:
 		_ = p.advance()
 		return p.whileStatement()
@@ -226,16 +231,16 @@ func (p *Parser) forStatement() (Node, error) {
 	}
 
 	if increment != nil {
-		body = Block{Statements: []Node{
+		body = &Block{Statements: []Node{
 			body,
 			increment,
 		}}
 	}
 
 	if condition == nil {
-		condition = Literal{Value: true}
+		condition = &Literal{Value: true}
 	}
-	loop := WhileStmt{
+	loop := &WhileStmt{
 		Body:       body,
 		Expression: condition,
 	}
@@ -244,7 +249,7 @@ func (p *Parser) forStatement() (Node, error) {
 		return loop, nil
 	}
 
-	return Block{Statements: []Node{initializer, loop}}, nil
+	return &Block{Statements: []Node{initializer, loop}}, nil
 }
 
 // whileStmt → "while" "(" expression ")" statement ;
@@ -268,7 +273,7 @@ func (p *Parser) whileStatement() (Node, error) {
 		return nil, err
 	}
 
-	return WhileStmt{
+	return &WhileStmt{
 		Expression: expr,
 		Body:       body,
 	}, nil
@@ -277,20 +282,20 @@ func (p *Parser) whileStatement() (Node, error) {
 // returnStmt → "return" expression? ";"
 func (p *Parser) returnStatement() (Node, error) {
 	if p.peekMatch(lexer.SEMICOLON) {
-		return ReturnStmt{}, nil
+		return &ReturnStmt{}, nil
 	}
 	expr, err := p.expressionStmt()
 	if err != nil {
 		return nil, err
 	}
 
-	return ReturnStmt{Expression: expr}, nil
+	return &ReturnStmt{Expression: expr}, nil
 }
 
 // ifStmt → "if" "(" expressionStmt ")" statement ( "else" statement )? ;
 func (p *Parser) ifStatement() (Node, error) {
 	var err error
-	ifStmt := IfStmt{}
+	ifStmt := &IfStmt{}
 	if !p.match(lexer.LEFT_PAREN) {
 		return nil, p.getPrevious().GenerateTokenError("Expected open paren after 'if' Statement")
 	}
@@ -333,7 +338,7 @@ func (p *Parser) block() (Node, error) {
 		nodes = append(nodes, n)
 	}
 
-	return Block{Statements: nodes}, nil
+	return &Block{Statements: nodes}, nil
 }
 
 // expressionStmt -> assignment
@@ -355,7 +360,7 @@ func (p *Parser) assignment() (Node, error) {
 		return expr, nil
 	}
 
-	v, ok := expr.(Variable)
+	v, ok := expr.(*Variable)
 	if !ok {
 		return nil, exprToken.GenerateTokenError("Expected variable for assignment but did not find")
 	}
@@ -365,7 +370,7 @@ func (p *Parser) assignment() (Node, error) {
 		return nil, err
 	}
 
-	return Assignment{
+	return &Assignment{
 		TokenName: v.TokenName,
 		Value:     rhs,
 	}, nil
@@ -408,7 +413,7 @@ func (p *Parser) equality() (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		res = Binary{
+		res = &Binary{
 			Left:     res,
 			Right:    right,
 			Operator: cur,
@@ -429,7 +434,7 @@ func (p *Parser) comparison() (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		res = Binary{
+		res = &Binary{
 			Left:     res,
 			Right:    right,
 			Operator: cur,
@@ -449,7 +454,7 @@ func (p *Parser) term() (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		res = Binary{
+		res = &Binary{
 			Left:     res,
 			Right:    right,
 			Operator: cur,
@@ -469,7 +474,7 @@ func (p *Parser) factor() (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		res = Binary{
+		res = &Binary{
 			Left:     res,
 			Right:    right,
 			Operator: cur,
@@ -485,7 +490,7 @@ func (p *Parser) unary() (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		return Unary{
+		return &Unary{
 			Operator: cur,
 			Right:    right,
 		}, nil
@@ -533,7 +538,7 @@ func (p *Parser) finishCall(callee Node) (Node, error) {
 		}
 	}
 
-	return CallExpr{
+	return &CallExpr{
 		Callee: callee,
 		Args:   args,
 		Paren:  p.getCurrent(),
@@ -556,23 +561,23 @@ func (p *Parser) primary() (Node, error) {
 		if !p.match(lexer.RIGHT_PAREN) {
 			return nil, cur.GenerateTokenError("unexpected token, expected ')'")
 		}
-		return Grouping{inner}, nil
+		return &Grouping{inner}, nil
 	}
 
 	_ = p.advance()
 	switch cur.Type {
 	case lexer.NUMBER, lexer.STRING:
-		return Literal{Value: cur.Literal}, nil
+		return &Literal{Value: cur.Literal}, nil
 
 	case lexer.TRUE:
-		return Literal{Value: true}, nil
+		return &Literal{Value: true}, nil
 	case lexer.FALSE:
-		return Literal{Value: false}, nil
+		return &Literal{Value: false}, nil
 	case lexer.NIL:
-		return Literal{Value: nil}, nil
+		return &Literal{Value: nil}, nil
 
 	case lexer.IDENTIFIER:
-		return Variable{TokenName: cur.Lexeme}, nil
+		return &Variable{TokenName: cur.Lexeme}, nil
 
 	default:
 		return nil, cur.GenerateTokenError("Could not parse Expression, expected a primary Expression")

@@ -19,7 +19,6 @@ func TestInterpreterSimpleProgram(t *testing.T) {
 	testSimpleProgramWorksWithOutput(t, program, expectedOutput)
 }
 
-// TODO: allow this function to accept multi-line programs
 func testSimpleProgram(program string) (string, error) {
 	i := New(zap.S())
 
@@ -41,7 +40,7 @@ func testSimpleProgram(program string) (string, error) {
 func testSimpleProgramWorksWithOutput(t *testing.T, program, expectedOut string) {
 	output, err := testSimpleProgram(program)
 	require.Nil(t, err, "expected no errors when running program: `%s`")
-	assert.Equal(t, output, expectedOut, "tried running program: `%s`", program)
+	assert.Equal(t, expectedOut, output, "tried running program: `%s`", program)
 }
 
 func TestAndFunctionality(t *testing.T) {
@@ -66,7 +65,12 @@ func TestOrFunctionality(t *testing.T) {
 }
 
 func TestBasicVarsAndArithmetic(t *testing.T) {
-	program := `var x = 5; var y = 6; print y +x; print y*y; y = x / 3; print y;`
+	program := `var x = 5;
+	var y = 6;
+	print y +x;
+	print y*y;
+	y = x / 3;
+	print y;`
 	expectedOut := "11\n36\n1.6666666666666667"
 	testSimpleProgramWorksWithOutput(t, program, expectedOut)
 }
@@ -101,9 +105,14 @@ func TestFibonacciFor(t *testing.T) {
 }
 
 func TestRecursiveFunction(t *testing.T) {
-	program := `fun countSkip(n) {   if (n > 1) countSkip(n - 2);   print n; }
-countSkip(10);`
-	expectedOut := "0\n2\n4\n6\n8\n10"
+	program := `
+fun count(n) {   
+	if (n > 1) 
+		count(n - 1);
+	print n; 
+}
+count(3);`
+	expectedOut := "1\n2\n3"
 	testSimpleProgramWorksWithOutput(t, program, expectedOut)
 }
 
@@ -181,6 +190,32 @@ x();
 	assert.Equal(t, "<fn nested>\nI am nested", out)
 }
 
+func TestBlockScopes(t *testing.T) {
+	program := `
+{ 
+	var x = 4;
+	{
+		var y = 5;
+		print  x + y; // 9
+		var x = 6;
+		print x; // 6
+		x = x + 1;
+		print x; // 7
+		{
+			print x + y; // 12
+		}
+	}
+	print x; // 4
+}
+`
+	out, err := testSimpleProgram(program)
+	require.Nil(t, err)
+	//require.EqualError(t, err, "failed to evaluate expression: 'attempted to get variable 'y' but does not exist'")
+	assert.Equal(t, "9\n6\n7\n12\n4", out)
+}
+
+// TODO: Test failing - could be indexing failure for distance calcs
+// Or could be some shit around env cloning from my crap
 func TestClosureProgram(t *testing.T) {
 	program := `
 fun makeCounter() {

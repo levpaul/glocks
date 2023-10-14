@@ -9,67 +9,67 @@ type ExprPrinter struct {
 	res string
 }
 
-func (e *ExprPrinter) VisitReturnStmt(r ReturnStmt) error {
+func (e *ExprPrinter) VisitReturnStmt(r *ReturnStmt) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitFunctionDeclaration(f FunctionDeclaration) error {
+func (e *ExprPrinter) VisitFunctionDeclaration(f *FunctionDeclaration) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitCallExpr(f CallExpr) error {
+func (e *ExprPrinter) VisitCallExpr(f *CallExpr) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitWhileStmt(w WhileStmt) error {
+func (e *ExprPrinter) VisitWhileStmt(w *WhileStmt) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitLogicalConjunction(v LogicalConjuction) error {
+func (e *ExprPrinter) VisitLogicalConjunction(v *LogicalConjuction) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitIfStmt(i IfStmt) error {
+func (e *ExprPrinter) VisitIfStmt(i *IfStmt) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitBlock(b Block) error {
+func (e *ExprPrinter) VisitBlock(b *Block) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitAssignment(v Assignment) error {
+func (e *ExprPrinter) VisitAssignment(v *Assignment) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitVariable(v Variable) error {
+func (e *ExprPrinter) VisitVariable(v *Variable) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitVarStmt(v VarStmt) error {
+func (e *ExprPrinter) VisitVarStmt(v *VarStmt) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (e *ExprPrinter) VisitBinary(b Binary) error {
+func (e *ExprPrinter) VisitBinary(b *Binary) error {
 	e.res = e.parenthesize(b.Operator.Lexeme, b.Left, b.Right)
 	return nil
 }
 
-func (e *ExprPrinter) VisitGrouping(g Grouping) error {
+func (e *ExprPrinter) VisitGrouping(g *Grouping) error {
 	e.res = e.parenthesize("group", g.Expression)
 	return nil
 }
 
-func (e *ExprPrinter) VisitLiteral(l Literal) error {
+func (e *ExprPrinter) VisitLiteral(l *Literal) error {
 	if l.Value == nil {
 		e.res = "nil"
 	}
@@ -77,12 +77,12 @@ func (e *ExprPrinter) VisitLiteral(l Literal) error {
 	return nil
 }
 
-func (e *ExprPrinter) VisitUnary(u Unary) error {
+func (e *ExprPrinter) VisitUnary(u *Unary) error {
 	e.res = e.parenthesize(u.Operator.Lexeme, u.Right)
 	return nil
 }
 
-func (e *ExprPrinter) VisitPrintStmt(p PrintStmt) error {
+func (e *ExprPrinter) VisitPrintStmt(p *PrintStmt) error {
 	e.res = e.parenthesize("print", p.Arg)
 	return nil
 }

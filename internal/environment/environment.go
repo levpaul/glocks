@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"errors"
 	"fmt"
 	"github.com/levpaul/glocks/internal/domain"
 )
@@ -21,6 +22,25 @@ func (e *Environment) Define(name string, v domain.Value) {
 	e.Values[name] = v
 }
 
+func (e *Environment) ancestor(distance int) (*Environment, error) {
+	currEnv := e
+	for i := 0; i < distance; i++ {
+		if currEnv.Enclosing == nil {
+			return nil, errors.New("could not find scope of variable, mismatch in declaration distances")
+		}
+		currEnv = currEnv.Enclosing
+	}
+	return currEnv, nil
+}
+
+func (e *Environment) GetAt(distance int, name string) (domain.Value, error) {
+	targetEnv, err := e.ancestor(distance)
+	if err != nil {
+		return nil, err
+	}
+	return targetEnv.Get(name)
+}
+
 func (e *Environment) Get(name string) (domain.Value, error) {
 	if val, found := e.Values[name]; found {
 		return val, nil
@@ -31,6 +51,14 @@ func (e *Environment) Get(name string) (domain.Value, error) {
 	}
 
 	return nil, fmt.Errorf("attempted to get variable '%s' but does not exist", name)
+}
+
+func (e *Environment) SetAt(distance int, name string, v domain.Value) error {
+	targetEnv, err := e.ancestor(distance)
+	if err != nil {
+		return err
+	}
+	return targetEnv.Set(name, v)
 }
 
 func (e *Environment) Set(name string, v domain.Value) error {
