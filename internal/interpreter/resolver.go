@@ -8,11 +8,19 @@ import (
 
 const MAX_SCOPES = 255
 
+type FunctionType int
+
+const (
+	FT_NONE FunctionType = iota
+	FT_FUNCTION
+)
+
 type Scope map[string]bool
 
 type Resolver struct {
-	i      *Interpreter
-	scopes []Scope
+	i               *Interpreter
+	scopes          []Scope
+	currentFunction FunctionType
 }
 
 func (r *Resolver) resolve(node parser.Node) error {
@@ -73,7 +81,11 @@ func (r *Resolver) resolveLocal(node parser.Node, name string) {
 	return
 }
 
-func (r *Resolver) resolveFunction(f *parser.FunctionDeclaration) error {
+func (r *Resolver) resolveFunction(f *parser.FunctionDeclaration, ft FunctionType) error {
+	enclosingFunction := r.currentFunction
+	r.currentFunction = ft
+	defer func() { r.currentFunction = enclosingFunction }()
+
 	if err := r.beginScope(); err != nil {
 		return err
 	}
@@ -81,7 +93,9 @@ func (r *Resolver) resolveFunction(f *parser.FunctionDeclaration) error {
 		r.declare(p)
 		r.define(p)
 	}
-	r.resolveNodes(f.Body)
+	if err := r.resolveNodes(f.Body); err != nil {
+		return err
+	}
 	return r.endScope()
 }
 
@@ -150,6 +164,12 @@ func (r *Resolver) VisitPrintStmt(p *parser.PrintStmt) error {
 }
 
 func (r *Resolver) VisitVarStmt(v *parser.VarStmt) error {
+	if len(r.scopes) > 0 {
+		if _, exists := r.scopes[0][v.Name]; exists {
+			return fmt.Errorf("already exists a variable with name='%s' in scope", v.Name)
+		}
+	}
+
 	r.declare(v.Name)
 	if v.Initializer != nil {
 		err := r.resolve(v.Initializer)
@@ -203,9 +223,12 @@ func (r *Resolver) VisitCallExpr(f *parser.CallExpr) error {
 func (r *Resolver) VisitFunctionDeclaration(f *parser.FunctionDeclaration) error {
 	r.declare(f.Name)
 	r.define(f.Name)
-	return r.resolveFunction(f)
+	return r.resolveFunction(f, FT_FUNCTION)
 }
 
 func (r *Resolver) VisitReturnStmt(rs *parser.ReturnStmt) error {
+	if r.currentFunction == FT_NONE {
+		return errors.New("detected return statement from global scope - not allowed")
+	}
 	return r.resolve(rs.Expression)
 }

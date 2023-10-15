@@ -140,7 +140,7 @@ func TestUnexpectedReturnStmtInBlock(t *testing.T) {
 }`
 	out, err := testSimpleProgram(program)
 	require.NotNil(t, err)
-	assert.EqualError(t, err, "Unexpected 'return' expression found. Expected to be within a function")
+	assert.ErrorContains(t, err, "detected return statement from global scope")
 	assert.Empty(t, out)
 }
 
@@ -210,12 +210,9 @@ func TestBlockScopes(t *testing.T) {
 `
 	out, err := testSimpleProgram(program)
 	require.Nil(t, err)
-	//require.EqualError(t, err, "failed to evaluate expression: 'attempted to get variable 'y' but does not exist'")
 	assert.Equal(t, "9\n6\n7\n12\n4", out)
 }
 
-// TODO: Test failing - could be indexing failure for distance calcs
-// Or could be some shit around env cloning from my crap
 func TestClosureProgram(t *testing.T) {
 	program := `
 fun makeCounter() {
@@ -235,4 +232,21 @@ counter(); // "2".
 	out, err := testSimpleProgram(program)
 	require.Nil(t, err)
 	assert.Equal(t, "1\n2", out)
+}
+
+func TestMultipleSameDeclarationsOutsideOfGlobalScope(t *testing.T) {
+	program := `fun bad() {
+  var a = "first";
+  var a = "second";
+}`
+	out, err := testSimpleProgram(program)
+	require.ErrorContains(t, err, "already exists a variable with name='a' in scope")
+	require.Empty(t, out)
+}
+
+func TestReturnFromGlobalScope(t *testing.T) {
+	program := "return 42;"
+	out, err := testSimpleProgram(program)
+	require.ErrorContains(t, err, "detected return statement from global scope - not allowed")
+	require.Empty(t, out)
 }
