@@ -23,6 +23,11 @@ type Resolver struct {
 	currentFunction FunctionType
 }
 
+func (r *Resolver) VisitClassDeclaration(c *parser.ClassDecl) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (r *Resolver) resolve(node parser.Node) error {
 	return node.Accept(r)
 }

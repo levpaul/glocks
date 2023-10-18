@@ -42,8 +42,12 @@ func (p *Parser) Parse() ([]Node, error) {
 
 // declaration    → funDecl
 // | varDecl
-// | statement ;
+// | statement
+// | classDecl ;
 func (p *Parser) declaration() (s Node, err error) {
+	if p.match(lexer.CLASS) {
+		return p.classDeclaration()
+	}
 	if p.match(lexer.FUN) {
 		return p.funcDeclaration("function")
 	}
@@ -51,6 +55,37 @@ func (p *Parser) declaration() (s Node, err error) {
 		return p.varDeclaration()
 	}
 	return p.statement()
+}
+
+// classDecl → "class" IDENTIFIER "{" function* "}" ;
+func (p *Parser) classDeclaration() (Node, error) {
+	name, err := p.consume(lexer.IDENTIFIER)
+	if err != nil {
+		return nil, fmt.Errorf("expected class name")
+	}
+
+	_, err = p.consume(lexer.LEFT_PAREN)
+	if err != nil {
+		return nil, fmt.Errorf("expected a '{' after function identifier; err=%w", err)
+	}
+
+	var methods []Node
+	for p.peekMatch(lexer.RIGHT_BRACE) && !p.isAtEnd() {
+		m, err := p.funcDeclaration("method")
+		if err != nil {
+			return nil, err
+		}
+		methods = append(methods, m)
+	}
+
+	_, err = p.consume(lexer.RIGHT_BRACE)
+	if err != nil {
+		return nil, fmt.Errorf("expected a '}' after function identifier; err=%w", err)
+	}
+	return &ClassDecl{
+		Name:    name.Lexeme,
+		Methods: methods,
+	}, nil
 }
 
 // function       → IDENTIFIER "(" parameters? ")" block ;

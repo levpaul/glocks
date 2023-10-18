@@ -6,6 +6,15 @@ import (
 	"github.com/levpaul/glocks/internal/lexer"
 )
 
+type ClassDecl struct {
+	Name    string
+	Methods []Node
+}
+
+func (c *ClassDecl) Accept(v Visitor) error {
+	return v.VisitClassDeclaration(c)
+}
+
 type ReturnStmt struct {
 	Expression Node
 }
@@ -160,6 +169,7 @@ type Visitor interface {
 	VisitCallExpr(f *CallExpr) error
 	VisitFunctionDeclaration(f *FunctionDeclaration) error
 	VisitReturnStmt(r *ReturnStmt) error
+	VisitClassDeclaration(c *ClassDecl) error
 }
 
 type LoxInterpreter interface {

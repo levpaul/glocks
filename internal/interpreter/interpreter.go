@@ -39,6 +39,11 @@ type Interpreter struct {
 	evalRes     any
 }
 
+func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDecl) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func newGlobalEnv() *environment.Environment {
 	g := &environment.Environment{Values: map[string]domain.Value{}}
 
