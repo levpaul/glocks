@@ -19,6 +19,12 @@ func (e EarlyReturn) Error() string {
 	return fmt.Sprintf("Returned early from a function with value '%v'", e.result)
 }
 
+func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
+	// declare(c.Name)
+	// define(c.Name)
+	return errors.New("class decl is unimplemented")
+}
+
 func (i *Interpreter) VisitReturnStmt(r *parser.ReturnStmt) error {
 	var err error
 	earlyReturn := EarlyReturn{}

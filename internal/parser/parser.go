@@ -64,13 +64,13 @@ func (p *Parser) classDeclaration() (Node, error) {
 		return nil, fmt.Errorf("expected class name")
 	}
 
-	_, err = p.consume(lexer.LEFT_PAREN)
+	_, err = p.consume(lexer.LEFT_BRACE)
 	if err != nil {
-		return nil, fmt.Errorf("expected a '{' after function identifier; err=%w", err)
+		return nil, fmt.Errorf("expected a '{' after class name; err=%w", err)
 	}
 
 	var methods []Node
-	for p.peekMatch(lexer.RIGHT_BRACE) && !p.isAtEnd() {
+	for !p.peekMatch(lexer.RIGHT_BRACE) && !p.isAtEnd() {
 		m, err := p.funcDeclaration("method")
 		if err != nil {
 			return nil, err
@@ -78,11 +78,15 @@ func (p *Parser) classDeclaration() (Node, error) {
 		methods = append(methods, m)
 	}
 
+	if p.isAtEnd() {
+		return nil, fmt.Errorf("expected a '}' after class declaration")
+	}
+
 	_, err = p.consume(lexer.RIGHT_BRACE)
 	if err != nil {
 		return nil, fmt.Errorf("expected a '}' after function identifier; err=%w", err)
 	}
-	return &ClassDecl{
+	return &ClassDeclaration{
 		Name:    name.Lexeme,
 		Methods: methods,
 	}, nil

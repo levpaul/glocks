@@ -23,7 +23,7 @@ type Resolver struct {
 	currentFunction FunctionType
 }
 
-func (r *Resolver) VisitClassDeclaration(c *parser.ClassDecl) error {
+func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 	//TODO implement me
 	panic("implement me")
 }

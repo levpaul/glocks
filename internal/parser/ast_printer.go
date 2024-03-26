@@ -9,7 +9,7 @@ type ExprPrinter struct {
 	res string
 }
 
-func (e *ExprPrinter) VisitClassDeclaration(c *ClassDecl) error {
+func (e *ExprPrinter) VisitClassDeclaration(c *ClassDeclaration) error {
 	//TODO implement me
 	panic("implement me")
 }
