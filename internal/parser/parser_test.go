@@ -1,11 +1,13 @@
 package parser
 
 import (
+	"fmt"
+	"testing"
+
 	"github.com/levpaul/glocks/internal/lexer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"testing"
 )
 
 func TestRawTokensSuccess(t *testing.T) {
@@ -106,11 +108,12 @@ func TestRawTokensSuccess(t *testing.T) {
 			expectedOutput: "(+ (+ (group (!= 1 (<= (<= 2 3) 4))) 43) (* hehehe true))",
 		},
 	}
-
 	printer := ExprPrinter{}
 	for _, test := range td {
 		p := NewParser(zap.S(), test.inputTokens)
+		fmt.Println("parser made", test.inputTokens)
 		res, err := p.expressionStmt()
+		fmt.Println("res err", res, err)
 		assert.Nil(t, err, "Unexpected parser error")
 		assert.Equal(t, test.expectedOutput, printer.Print(res), "Failed test with input tokens %v", test.inputTokens)
 	}
