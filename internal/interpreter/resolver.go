@@ -18,8 +18,8 @@ const (
 
 type Scope map[string]bool
 
-// Resolver is responsible for resolving all variables and functions in the AST
-// It does this by walking the AST and building a stack of scopes to track the current scope
+// Resolver is responsible for resolving variable names to their scope. It walks the entire AST
+// before execution to resolve variable names to their scope.
 type Resolver struct {
 	i               *Interpreter
 	scopes          []Scope

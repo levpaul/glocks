@@ -2,13 +2,13 @@ package interpreter
 
 import (
 	"fmt"
+
 	"github.com/levpaul/glocks/internal/builtins"
 	"github.com/levpaul/glocks/internal/domain"
 	"github.com/levpaul/glocks/internal/environment"
 	"github.com/levpaul/glocks/internal/lexer"
 	"github.com/levpaul/glocks/internal/parser"
 	"go.uber.org/zap"
-	"io"
 )
 
 func New(log *zap.SugaredLogger) *Interpreter {
@@ -26,17 +26,16 @@ func New(log *zap.SugaredLogger) *Interpreter {
 }
 
 type Interpreter struct {
-	log         *zap.SugaredLogger
-	s           *lexer.Scanner
-	p           *parser.Parser
-	r           *Resolver
-	astPrinter  parser.ExprPrinter
-	replMode    bool
-	printOutput io.Writer
-	globals     *environment.Environment
-	env         *environment.Environment
-	locals      map[parser.Node]int
-	evalRes     any
+	log        *zap.SugaredLogger
+	s          *lexer.Scanner
+	p          *parser.Parser
+	r          *Resolver
+	astPrinter parser.ExprPrinter
+	replMode   bool
+	globals    *environment.Environment
+	env        *environment.Environment
+	locals     map[parser.Node]int
+	evalRes    any
 }
 
 func newGlobalEnv() *environment.Environment {
@@ -64,21 +63,25 @@ func (i *Interpreter) Run(program string) error {
 }
 
 func (i *Interpreter) runLine(line string) error {
+	// Run a lexer on the line of code to tokenize it
 	i.s = lexer.NewScanner(line, i.log)
 	tokens := i.s.ScanTokens()
 
+	// Run a parser on the tokens to parse them into an AST
 	i.p = parser.NewParser(i.log, tokens)
 	stmts, err := i.p.Parse()
 	if err != nil {
 		return fmt.Errorf("failed to parse line, err='%w'", err)
 	}
 
+	// Invoke resolver on the AST to resolve variable names to their scope
 	i.r = &Resolver{i: i, scopes: []Scope{}}
 	err = i.r.resolveNodes(stmts)
 	if err != nil {
-		return fmt.Errorf("Static Analysis [Resolver] FAILURE, err='%w'", err)
+		return fmt.Errorf("static analysis [resolver] FAILURE, err='%w'", err)
 	}
 
+	// Execute each statement in the program, via AST traversal
 	for _, stmt := range stmts {
 		if i.replMode && i.log.Level() <= zap.DebugLevel {
 			i.log.Debugf("AST repr of input: %s", i.astPrinter.Print(stmt))
@@ -87,7 +90,7 @@ func (i *Interpreter) runLine(line string) error {
 		result, err := i.Evaluate(stmt)
 		if err != nil {
 			if _, isEarlyRet := err.(EarlyReturn); isEarlyRet {
-				return fmt.Errorf("Unexpected 'return' expression found. Expected to be within a function")
+				return fmt.Errorf("unexpected 'return' expression found. Expected to be within a function")
 			}
 			return fmt.Errorf("failed to evaluate expression: '%w'", err)
 		}
