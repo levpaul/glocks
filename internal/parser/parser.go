@@ -3,12 +3,14 @@ package parser
 import (
 	"errors"
 	"fmt"
+
 	"github.com/levpaul/glocks/internal/lexer"
 	"go.uber.org/zap"
 )
 
 // Parse starts parsing with lowest precedence part of Expression and recursively descend to highest precedence Node
-// This is a Recursive Decent Parser
+// This is a Recursive Decent Parser - such that precedence is handled by the order of function calls, structuring the
+// Abstract Syntax Tree (AST) in a way that is easy to evaluate by the interpreter
 type Parser struct {
 	current int
 	tokens  []*lexer.Token
@@ -73,7 +75,7 @@ func (p *Parser) classDeclaration() (Node, error) {
 	for !p.peekMatch(lexer.RIGHT_BRACE) && !p.isAtEnd() {
 		m, err := p.funcDeclaration("method")
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error with function declaration within class; err=%w", err)
 		}
 		methods = append(methods, m)
 	}
@@ -84,7 +86,7 @@ func (p *Parser) classDeclaration() (Node, error) {
 
 	_, err = p.consume(lexer.RIGHT_BRACE)
 	if err != nil {
-		return nil, fmt.Errorf("expected a '}' after function identifier; err=%w", err)
+		return nil, fmt.Errorf("expected a '}' after a class body")
 	}
 	return &ClassDeclaration{
 		Name:    name.Lexeme,
@@ -701,6 +703,8 @@ func (p *Parser) isAtEnd() bool {
 	return p.tokens[p.current].Type == lexer.EOF
 }
 
+// synchronize will attempt to skip tokens until it gets past a statement terminator (semicolon) or a new statement
+// it's mostly used for REPL recovery
 func (p *Parser) synchronize() {
 	for p.advance() == nil {
 		if p.getPrevious().Type == lexer.SEMICOLON {

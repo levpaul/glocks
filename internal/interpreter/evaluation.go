@@ -3,6 +3,7 @@ package interpreter
 import (
 	"errors"
 	"fmt"
+
 	"github.com/levpaul/glocks/internal/domain"
 	"github.com/levpaul/glocks/internal/environment"
 	"github.com/levpaul/glocks/internal/lexer"
@@ -20,9 +21,9 @@ func (e EarlyReturn) Error() string {
 }
 
 func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
-	// declare(c.Name)
-	// define(c.Name)
-	return errors.New("class decl is unimplemented")
+	klass := LoxClass{}
+	i.env.Define(c.Name, klass)
+	return nil
 }
 
 func (i *Interpreter) VisitReturnStmt(r *parser.ReturnStmt) error {

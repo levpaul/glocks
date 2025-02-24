@@ -3,6 +3,7 @@ package interpreter
 import (
 	"errors"
 	"fmt"
+
 	"github.com/levpaul/glocks/internal/parser"
 )
 
@@ -17,6 +18,8 @@ const (
 
 type Scope map[string]bool
 
+// Resolver is responsible for resolving all variables and functions in the AST
+// It does this by walking the AST and building a stack of scopes to track the current scope
 type Resolver struct {
 	i               *Interpreter
 	scopes          []Scope
@@ -24,8 +27,9 @@ type Resolver struct {
 }
 
 func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
-	//TODO implement me
-	panic("implement me")
+	r.declare(c.Name)
+	r.define(c.Name)
+	return nil
 }
 
 func (r *Resolver) resolve(node parser.Node) error {
@@ -43,7 +47,7 @@ func (r *Resolver) resolveNodes(nodes []parser.Node) error {
 
 func (r *Resolver) beginScope() error {
 	if len(r.scopes) > MAX_SCOPES {
-		return errors.New("Refused to create new scope, at the maximum supported!")
+		return fmt.Errorf("maximum number of scopes (%d) exceeded", MAX_SCOPES)
 	}
 	r.scopes = append([]Scope{{}}, r.scopes...)
 	return nil
@@ -51,7 +55,7 @@ func (r *Resolver) beginScope() error {
 
 func (r *Resolver) endScope() error {
 	if len(r.scopes) < 1 {
-		return errors.New("Failed to end scope - there are no active scopes!")
+		return errors.New("attempted to end a scope with no scopes to end")
 	}
 	r.scopes = r.scopes[1:]
 	return nil

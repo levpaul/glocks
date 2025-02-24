@@ -3,14 +3,20 @@ package environment
 import (
 	"errors"
 	"fmt"
+
 	"github.com/levpaul/glocks/internal/domain"
 )
 
+// Environment is a recursive data structure that holds a map of variable names to values
+// and a pointer to the enclosing environment. This allows for nested scopes and
+// variable shadowing. The Environment is used to store variables and their values
+// during execution.
 type Environment struct {
 	Enclosing *Environment
 	Values    map[string]domain.Value
 }
 
+// NewEnvironment creates a new Environment with the given enclosing environment.
 func NewEnvironment(enclosing *Environment) *Environment {
 	return &Environment{
 		Enclosing: enclosing,
@@ -41,6 +47,8 @@ func (e *Environment) GetAt(distance int, name string) (domain.Value, error) {
 	return targetEnv.Get(name)
 }
 
+// Get retrieves the value of a variable from the environment. If the variable is not found
+// in the current environment, it will search the enclosing environments recursively.
 func (e *Environment) Get(name string) (domain.Value, error) {
 	if val, found := e.Values[name]; found {
 		return val, nil
@@ -61,6 +69,8 @@ func (e *Environment) SetAt(distance int, name string, v domain.Value) error {
 	return targetEnv.Set(name, v)
 }
 
+// Set sets the value of a variable in the environment. If the variable is not found
+// in the current environment, it will search and set in the enclosing environments recursively.
 func (e *Environment) Set(name string, v domain.Value) error {
 	if _, found := e.Values[name]; !found {
 		if e.Enclosing == nil {
