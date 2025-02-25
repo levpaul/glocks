@@ -61,6 +61,7 @@ func (r *Resolver) endScope() error {
 	return nil
 }
 
+// dec
 func (r *Resolver) declare(name string) {
 	if len(r.scopes) == 0 {
 		return

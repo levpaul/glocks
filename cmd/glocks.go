@@ -2,10 +2,11 @@ package main
 
 import (
 	"errors"
+	"os"
+
 	"github.com/levpaul/glocks/internal/interpreter"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"os"
 )
 
 func main() {

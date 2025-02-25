@@ -1,0 +1,28 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "go",
+			"label": "go: build package",
+			"command": "build",
+			"args": [
+				"cmd/glocks.go"
+			],
+			"group": "build",
+		}, {
+			"type": "go",
+			"label": "go: debug",
+			"command": "debug",
+			"args": [
+				"-args",
+				"-v"
+			],
+			"presentation": {
+				"reveal": "always",
+				"focus": true,
+				"panel": "shared"
+			},
+		}
+
+	]
+}

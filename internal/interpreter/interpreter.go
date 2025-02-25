@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// New creates a new Interpreter for Lox
 func New(log *zap.SugaredLogger) *Interpreter {
 	globals := newGlobalEnv()
 	return &Interpreter{
@@ -25,6 +26,8 @@ func New(log *zap.SugaredLogger) *Interpreter {
 	}
 }
 
+// Interpreter is the main struct for the Lox interpreter, it is self-contained and
+// can be used to run a Lox program.
 type Interpreter struct {
 	log        *zap.SugaredLogger
 	s          *lexer.Scanner
