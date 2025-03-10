@@ -539,7 +539,7 @@ func (p *Parser) unary() (Node, error) {
 	return p.call()
 }
 
-// call → primary ( "(" arguments? ")" )* ;
+// call → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 func (p *Parser) call() (Node, error) {
 	expr, err := p.primary()
 	if err != nil {
@@ -552,6 +552,12 @@ func (p *Parser) call() (Node, error) {
 			if err != nil {
 				return nil, err
 			}
+		} else if p.match(lexer.DOT) {
+			name, err := p.consume(lexer.IDENTIFIER)
+			if err != nil {
+				return nil, fmt.Errorf("expected identifier after '.' in call expression; err=%w", err)
+			}
+			expr = &GetExpr{Instance: expr, Name: name}
 		} else {
 			return expr, nil
 		}

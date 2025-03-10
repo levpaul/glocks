@@ -50,6 +50,25 @@ func (i *Interpreter) VisitFunctionDeclaration(f *parser.FunctionDeclaration) er
 	return nil
 }
 
+func (i *Interpreter) VisitGetExpr(g *parser.GetExpr) error {
+	instance, err := i.Evaluate(g.Instance)
+	if err != nil {
+		return err
+	}
+
+	if instance == nil {
+		return fmt.Errorf("Attempted to get property '%s' from a nil instance", g.Name.Lexeme)
+	}
+
+	loxInstance, ok := instance.(LoxInstance)
+	if !ok {
+		return fmt.Errorf("Expected instance of type LoxInstance, but got '%v'", instance)
+	}
+
+	i.evalRes, err = loxInstance.Get(g.Name.Lexeme)
+	return err
+}
+
 func (i *Interpreter) VisitCallExpr(f *parser.CallExpr) error {
 	callee, err := i.Evaluate(f.Callee)
 	if err != nil {
@@ -317,6 +336,7 @@ func (i *Interpreter) VisitUnary(u *parser.Unary) error {
 	return nil
 }
 
+// Evaluate evaluates a statement and returns the result of the evaluation.
 func (i *Interpreter) Evaluate(stmt parser.Node) (domain.Value, error) {
 	if stmt == nil {
 		return nil, errors.New(NilStatementErrorMessage)

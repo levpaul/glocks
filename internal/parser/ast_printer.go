@@ -9,6 +9,11 @@ type ExprPrinter struct {
 	res string
 }
 
+// VisitGetExpr implements Visitor.
+func (e *ExprPrinter) VisitGetExpr(g *GetExpr) error {
+	panic("unimplemented")
+}
+
 func (e *ExprPrinter) VisitClassDeclaration(c *ClassDeclaration) error {
 	//TODO implement me
 	panic("implement me")

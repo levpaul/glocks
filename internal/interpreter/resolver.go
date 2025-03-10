@@ -242,3 +242,8 @@ func (r *Resolver) VisitReturnStmt(rs *parser.ReturnStmt) error {
 	}
 	return r.resolve(rs.Expression)
 }
+
+// VisitGetExpr implements parser.Visitor.
+func (r *Resolver) VisitGetExpr(g *parser.GetExpr) error {
+	return fmt.Errorf("unimplemented")
+}

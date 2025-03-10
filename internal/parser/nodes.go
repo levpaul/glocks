@@ -6,6 +6,15 @@ import (
 	"github.com/levpaul/glocks/internal/lexer"
 )
 
+type GetExpr struct {
+	Instance Node
+	Name     *lexer.Token
+}
+
+func (g *GetExpr) Accept(v Visitor) error {
+	return v.VisitGetExpr(g)
+}
+
 type ClassDeclaration struct {
 	Name    string
 	Methods []Node
@@ -170,6 +179,7 @@ type Visitor interface {
 	VisitFunctionDeclaration(f *FunctionDeclaration) error
 	VisitReturnStmt(r *ReturnStmt) error
 	VisitClassDeclaration(c *ClassDeclaration) error
+	VisitGetExpr(g *GetExpr) error
 }
 
 type LoxInterpreter interface {

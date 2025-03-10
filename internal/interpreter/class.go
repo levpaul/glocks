@@ -34,3 +34,7 @@ type LoxInstance struct {
 func (l LoxInstance) String() string {
 	return l.klass.Name + " instance"
 }
+
+func (l LoxInstance) Get(name string) (domain.Value, error) {
+	return nil, fmt.Errorf("Attempted to get property '%s' from a class instance, but no such property exists", name)
+}
