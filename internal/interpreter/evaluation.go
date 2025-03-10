@@ -21,7 +21,9 @@ func (e EarlyReturn) Error() string {
 }
 
 func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
-	klass := LoxClass{}
+	klass := LoxClass{
+		Name: c.Name,
+	}
 	i.env.Define(c.Name, klass)
 	return nil
 }

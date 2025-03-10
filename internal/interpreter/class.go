@@ -32,5 +32,5 @@ type LoxInstance struct {
 }
 
 func (l LoxInstance) String() string {
-	return l.klass.Name + "instance"
+	return l.klass.Name + " instance"
 }
