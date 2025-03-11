@@ -1,4 +1,4 @@
-package interpreter
+package resolver
 
 import (
 	"errors"
@@ -6,109 +6,6 @@ import (
 
 	"github.com/levpaul/glocks/internal/parser"
 )
-
-const MAX_SCOPES = 255
-
-type FunctionType int
-
-const (
-	FT_NONE FunctionType = iota
-	FT_FUNCTION
-)
-
-// Scope is a map of variable names to whether they have been defined or not
-type Scope map[string]bool
-
-// Resolver is responsible for resolving variable names to their scope. It walks the entire AST
-// before execution to resolve variable names to their scope.
-type Resolver struct {
-	i               *Interpreter
-	scopes          []Scope
-	currentFunction FunctionType
-}
-
-// resolve resolves a single node by calling Accept on the node, which in turn calls the appropriate Visit method
-// of the passed Node
-func (r *Resolver) resolve(node parser.Node) error {
-	return node.Accept(r)
-}
-
-// resolveNodes resolves a slice of nodes by calling resolve on each node
-func (r *Resolver) resolveNodes(nodes []parser.Node) error {
-	for _, node := range nodes {
-		if err := r.resolve(node); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (r *Resolver) beginScope() error {
-	if len(r.scopes) > MAX_SCOPES {
-		return fmt.Errorf("maximum number of scopes (%d) exceeded", MAX_SCOPES)
-	}
-	r.scopes = append([]Scope{{}}, r.scopes...)
-	return nil
-}
-
-func (r *Resolver) endScope() error {
-	if len(r.scopes) < 1 {
-		return errors.New("attempted to end a scope with no scopes to end")
-	}
-	r.scopes = r.scopes[1:]
-	return nil
-}
-
-// dec
-func (r *Resolver) declare(name string) {
-	if len(r.scopes) == 0 {
-		return
-	}
-
-	r.scopes[0][name] = false
-}
-
-func (r *Resolver) define(name string) {
-	if len(r.scopes) == 0 {
-		return
-	}
-
-	r.scopes[0][name] = true
-}
-
-// resolveLocal walks through the scopes stack, from narrowest to widest to find the 'distance' to resolution
-func (r *Resolver) resolveLocal(node parser.Node, name string) {
-	// This is different to the book as Java indexes Stacks with 0 being the bottom of the stack
-	// whereas here I'm using the zero index as the top of the stack
-	for i, scope := range r.scopes {
-		if _, exists := scope[name]; exists {
-			r.i.resolve(node, i)
-			return
-		}
-	}
-}
-
-// resolveFunction resolves a function declaration, including its parameters and body
-func (r *Resolver) resolveFunction(f *parser.FunctionDeclaration, ft FunctionType) error {
-	enclosingFunction := r.currentFunction
-	r.currentFunction = ft
-	defer func() { r.currentFunction = enclosingFunction }()
-
-	if err := r.beginScope(); err != nil {
-		return err
-	}
-	for _, p := range f.Params {
-		r.declare(p)
-		r.define(p)
-	}
-	if err := r.resolveNodes(f.Body); err != nil {
-		return err
-	}
-	return r.endScope()
-}
-
-// ============================================================
-//	VISITOR METHODS
 
 func (r *Resolver) VisitIfStmt(i *parser.IfStmt) error {
 	if err := r.resolve(i.Expression); err != nil {
@@ -128,7 +25,7 @@ func (r *Resolver) VisitBlock(b *parser.Block) error {
 	if err != nil {
 		return err
 	}
-	err = r.resolveNodes(b.Statements)
+	err = r.ResolveNodes(b.Statements)
 	if err != nil {
 		return err
 	}
@@ -156,8 +53,8 @@ func (r *Resolver) VisitUnary(u *parser.Unary) error {
 }
 
 func (r *Resolver) VisitVariable(v *parser.Variable) error {
-	if len(r.scopes) > 0 {
-		if defined, exists := r.scopes[0][v.TokenName]; exists && !defined {
+	if len(r.Scopes) > 0 {
+		if defined, exists := r.Scopes[0][v.TokenName]; exists && !defined {
 			return fmt.Errorf("can't read local variable '%s' in its own initializer", v.TokenName)
 		}
 	}
@@ -170,8 +67,8 @@ func (r *Resolver) VisitPrintStmt(p *parser.PrintStmt) error {
 }
 
 func (r *Resolver) VisitVarStmt(v *parser.VarStmt) error {
-	if len(r.scopes) > 0 {
-		if _, exists := r.scopes[0][v.Name]; exists {
+	if len(r.Scopes) > 0 {
+		if _, exists := r.Scopes[0][v.Name]; exists {
 			return fmt.Errorf("already exists a variable with name='%s' in scope", v.Name)
 		}
 	}

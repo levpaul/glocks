@@ -8,6 +8,7 @@ import (
 	"github.com/levpaul/glocks/internal/environment"
 	"github.com/levpaul/glocks/internal/lexer"
 	"github.com/levpaul/glocks/internal/parser"
+	"github.com/levpaul/glocks/internal/resolver"
 	"go.uber.org/zap"
 )
 
@@ -21,7 +22,6 @@ func New(log *zap.SugaredLogger) *Interpreter {
 		astPrinter: parser.ExprPrinter{},
 		replMode:   false,
 		globals:    globals,
-		locals:     map[parser.Node]int{},
 		env:        globals, // Set initial env to Global
 	}
 }
@@ -32,12 +32,11 @@ type Interpreter struct {
 	log        *zap.SugaredLogger
 	s          *lexer.Scanner
 	p          *parser.Parser
-	r          *Resolver
+	r          *resolver.Resolver
 	astPrinter parser.ExprPrinter
 	replMode   bool
 	globals    *environment.Environment
 	env        *environment.Environment
-	locals     map[parser.Node]int
 	evalRes    any
 }
 
@@ -82,8 +81,8 @@ func (i *Interpreter) run(code string) error {
 	}
 
 	// Invoke resolver on the AST to resolve variable names to their scope
-	i.r = &Resolver{i: i, scopes: []Scope{}}
-	err = i.r.resolveNodes(stmts)
+	i.r = &resolver.Resolver{Scopes: []resolver.Scope{}}
+	err = i.r.ResolveNodes(stmts)
 	if err != nil {
 		return fmt.Errorf("static analysis [resolver] FAILURE, err='%w'", err)
 	}
@@ -117,12 +116,8 @@ func (i *Interpreter) ExecuteBlock(block *parser.Block, env *environment.Environ
 	return i.VisitBlock(block)
 }
 
-func (i *Interpreter) resolve(node parser.Node, depth int) {
-	i.locals[node] = depth
-}
-
 func (i *Interpreter) lookUpVariable(name string, node parser.Node) (domain.Value, error) {
-	if distance, exists := i.locals[node]; exists {
+	if distance, err := i.r.GetLocal(node); err != nil {
 		return i.env.GetAt(distance, name)
 	}
 
