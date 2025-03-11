@@ -2,10 +2,12 @@ package lexer
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"strconv"
+
+	"go.uber.org/zap"
 )
 
+// keywordMap maps reserved keywords to their respective TokenType
 var keywordMap = map[string]TokenType{
 	"and":    AND,
 	"class":  CLASS,
@@ -25,6 +27,7 @@ var keywordMap = map[string]TokenType{
 	"while":  WHILE,
 }
 
+// Scanner is responsible for scanning source code and converting it into tokens
 type Scanner struct {
 	source string
 	log    *zap.SugaredLogger
@@ -35,6 +38,7 @@ type Scanner struct {
 	line    int
 }
 
+// NewScanner returns a new instance of Scanner
 func NewScanner(source string, log *zap.SugaredLogger) *Scanner {
 	return &Scanner{
 		source: source,
@@ -64,6 +68,8 @@ func (s *Scanner) ScanTokens() []*Token {
 	return s.tokens
 }
 
+// scanToken reads the next token from the source and adds it to the tokens slice
+// in the scanner. It returns an error if the token is invalid.
 func (s *Scanner) scanToken() error {
 	r := s.advance()
 	switch r {
@@ -128,6 +134,8 @@ func (s *Scanner) scanToken() error {
 	return nil
 }
 
+// scanIdentifier scans an identifier token from the source and adds it to the tokens slice
+// in the scanner.
 func (s *Scanner) scanIdentifier() {
 	for isAlpha(s.peek()) { // scan through initial digits
 		s.advance()
@@ -141,6 +149,7 @@ func (s *Scanner) scanIdentifier() {
 	s.addToken(tt)
 }
 
+// scanNumber scans a number token from the source and adds it to the tokens slice
 func (s *Scanner) scanNumber() error {
 	for isDigit(s.peek()) { // scan through initial digits
 		s.advance()
@@ -166,6 +175,7 @@ func (s *Scanner) scanNumber() error {
 	return nil
 }
 
+// scanString scans a string token from the source and adds it to the tokens slice
 func (s *Scanner) scanString() {
 	for s.peek() != '"' && !s.isAtEnd() {
 		if s.peek() == '\n' {

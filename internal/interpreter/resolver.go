@@ -16,6 +16,7 @@ const (
 	FT_FUNCTION
 )
 
+// Scope is a map of variable names to whether they have been defined or not
 type Scope map[string]bool
 
 // Resolver is responsible for resolving variable names to their scope. It walks the entire AST
