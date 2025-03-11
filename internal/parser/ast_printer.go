@@ -9,64 +9,58 @@ type ExprPrinter struct {
 	res string
 }
 
+func reflectPrint(i interface{}) error {
+	fmt.Printf("%+v\n", i)
+	return nil
+}
+
 // VisitGetExpr implements Visitor.
 func (e *ExprPrinter) VisitGetExpr(g *GetExpr) error {
-	panic("unimplemented")
+	return reflectPrint(g)
 }
 
 func (e *ExprPrinter) VisitClassDeclaration(c *ClassDeclaration) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(c)
 }
 
 func (e *ExprPrinter) VisitReturnStmt(r *ReturnStmt) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(r)
 }
 
 func (e *ExprPrinter) VisitFunctionDeclaration(f *FunctionDeclaration) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(f)
 }
 
 func (e *ExprPrinter) VisitCallExpr(f *CallExpr) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(f)
 }
 
 func (e *ExprPrinter) VisitWhileStmt(w *WhileStmt) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(w)
 }
 
 func (e *ExprPrinter) VisitLogicalConjunction(v *LogicalConjuction) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(v)
 }
 
 func (e *ExprPrinter) VisitIfStmt(i *IfStmt) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(i)
 }
 
 func (e *ExprPrinter) VisitBlock(b *Block) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(b)
 }
 
 func (e *ExprPrinter) VisitAssignment(v *Assignment) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(v)
 }
 
 func (e *ExprPrinter) VisitVariable(v *Variable) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(v)
 }
 
 func (e *ExprPrinter) VisitVarStmt(v *VarStmt) error {
-	//TODO implement me
-	panic("implement me")
+	return reflectPrint(v)
 }
 
 func (e *ExprPrinter) VisitBinary(b *Binary) error {

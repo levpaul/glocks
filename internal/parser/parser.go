@@ -17,6 +17,7 @@ type Parser struct {
 	log     *zap.SugaredLogger
 }
 
+// NewParser creates a new Parser with a given logger and token list - if no tokens are provided, an empty list is used
 func NewParser(log *zap.SugaredLogger, tokens []*lexer.Token) *Parser {
 	if tokens == nil {
 		tokens = []*lexer.Token{}
@@ -28,6 +29,8 @@ func NewParser(log *zap.SugaredLogger, tokens []*lexer.Token) *Parser {
 	}
 }
 
+// Parse parses the token list that the Parser was created with, it returns a list of Statements (Nodes)
+// which can be evaluated by the interpreter
 func (p *Parser) Parse() ([]Node, error) {
 	var stmts []Node
 	for !p.isAtEnd() {
@@ -42,7 +45,7 @@ func (p *Parser) Parse() ([]Node, error) {
 	return stmts, nil
 }
 
-// declaration    → funDecl
+// declaration  → funDecl
 // | varDecl
 // | statement
 // | classDecl ;
@@ -222,7 +225,7 @@ func (p *Parser) statement() (s Node, err error) {
 	return
 }
 
-// forStmt        → "for" "(" ( varDecl | exprStmt | ";" )
+// forStmt    → "for" "(" ( varDecl | exprStmt | ";" )
 // expression? ";"
 // expression? ")" statement ;
 func (p *Parser) forStatement() (Node, error) {
@@ -564,6 +567,7 @@ func (p *Parser) call() (Node, error) {
 	}
 }
 
+// finishCall will finish parsing a function call expression
 func (p *Parser) finishCall(callee Node) (Node, error) {
 	var args []Node
 	if !p.match(lexer.RIGHT_PAREN) {
@@ -631,6 +635,7 @@ func (p *Parser) primary() (Node, error) {
 	}
 }
 
+// advance will move the parser head to the next token in the token list or return an error if it's already at the end
 func (p *Parser) advance() error {
 	p.current++
 	if p.current >= len(p.tokens) {
@@ -639,6 +644,7 @@ func (p *Parser) advance() error {
 	return nil
 }
 
+// getCurrent will return the current token that the parser is looking at
 func (p *Parser) getCurrent() *lexer.Token {
 	if p.current < 0 || p.current >= len(p.tokens) {
 		return nil
@@ -646,6 +652,7 @@ func (p *Parser) getCurrent() *lexer.Token {
 	return p.tokens[p.current]
 }
 
+// getPrevious will return the token that the parser was looking at before the current token
 func (p *Parser) getPrevious() *lexer.Token {
 	if p.current <= 0 || p.current > len(p.tokens) {
 		return nil

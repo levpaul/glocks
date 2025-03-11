@@ -49,13 +49,15 @@ func newGlobalEnv() *environment.Environment {
 	return g
 }
 
+// GetEnvironment returns the current environment of the interpreter
 func (i *Interpreter) GetEnvironment() *environment.Environment {
 	return i.env
 }
 
+// Run executes a Lox program.
 func (i *Interpreter) Run(program string) error {
 	var err error
-	if err = i.runLine(program); err != nil {
+	if err = i.run(program); err != nil {
 		i.log.With("error", err).
 			Errorf("Failed to run program:\n%s\n", program)
 		return err
@@ -65,9 +67,11 @@ func (i *Interpreter) Run(program string) error {
 	return nil
 }
 
-func (i *Interpreter) runLine(line string) error {
+// run executes Lox code. It splits the code into tokens, parses the tokens into an AST,
+// resolves variable names to their scope, and then evaluates the AST.
+func (i *Interpreter) run(code string) error {
 	// Run a lexer on the line of code to tokenize it
-	i.s = lexer.NewScanner(line, i.log)
+	i.s = lexer.NewScanner(code, i.log)
 	tokens := i.s.ScanTokens()
 
 	// Run a parser on the tokens to parse them into an AST
@@ -84,7 +88,7 @@ func (i *Interpreter) runLine(line string) error {
 		return fmt.Errorf("static analysis [resolver] FAILURE, err='%w'", err)
 	}
 
-	// Execute each statement in the program, via AST traversal
+	// Execute each statement in the program, via AST traversal of the parsed statements
 	for _, stmt := range stmts {
 		if i.replMode && i.log.Level() <= zap.DebugLevel {
 			i.log.Debugf("AST repr of input: %s", i.astPrinter.Print(stmt))

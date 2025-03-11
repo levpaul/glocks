@@ -1,8 +1,9 @@
 package interpreter
 
 import (
-	"github.com/chzyer/readline"
 	"io"
+
+	"github.com/chzyer/readline"
 )
 
 func (i *Interpreter) REPL() error {
@@ -36,7 +37,7 @@ func (i *Interpreter) REPL() error {
 			i.log.Info("Exiting glocks repl")
 			return nil
 		default: // REPL process line
-			if err = i.runLine(line); err != nil {
+			if err = i.run(line); err != nil {
 				i.log.Warn(err)
 			}
 		}

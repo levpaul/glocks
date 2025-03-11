@@ -27,16 +27,13 @@ type Resolver struct {
 	currentFunction FunctionType
 }
 
-func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
-	r.declare(c.Name)
-	r.define(c.Name)
-	return nil
-}
-
+// resolve resolves a single node by calling Accept on the node, which in turn calls the appropriate Visit method
+// of the passed Node
 func (r *Resolver) resolve(node parser.Node) error {
 	return node.Accept(r)
 }
 
+// resolveNodes resolves a slice of nodes by calling resolve on each node
 func (r *Resolver) resolveNodes(nodes []parser.Node) error {
 	for _, node := range nodes {
 		if err := r.resolve(node); err != nil {
@@ -89,9 +86,9 @@ func (r *Resolver) resolveLocal(node parser.Node, name string) {
 			return
 		}
 	}
-	return
 }
 
+// resolveFunction resolves a function declaration, including its parameters and body
 func (r *Resolver) resolveFunction(f *parser.FunctionDeclaration, ft FunctionType) error {
 	enclosingFunction := r.currentFunction
 	r.currentFunction = ft
@@ -114,12 +111,10 @@ func (r *Resolver) resolveFunction(f *parser.FunctionDeclaration, ft FunctionTyp
 //	VISITOR METHODS
 
 func (r *Resolver) VisitIfStmt(i *parser.IfStmt) error {
-	err := r.resolve(i.Expression)
-	if err != nil {
+	if err := r.resolve(i.Expression); err != nil {
 		return err
 	}
-	r.resolve(i.Statement)
-	if err != nil {
+	if err := r.resolve(i.Statement); err != nil {
 		return err
 	}
 	if i.ElseStatement != nil {
@@ -247,4 +242,11 @@ func (r *Resolver) VisitReturnStmt(rs *parser.ReturnStmt) error {
 // VisitGetExpr implements parser.Visitor.
 func (r *Resolver) VisitGetExpr(g *parser.GetExpr) error {
 	return fmt.Errorf("unimplemented")
+}
+
+// VisitClassDeclaration declares and defines a class from a ClassDeclaration node
+func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
+	r.declare(c.Name)
+	r.define(c.Name)
+	return nil
 }

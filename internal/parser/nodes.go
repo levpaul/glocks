@@ -141,6 +141,8 @@ func (a *Assignment) Accept(visitor Visitor) error {
 	return visitor.VisitAssignment(a)
 }
 
+// Node represents a node in the AST. All nodes must implement the Accept method
+// which allows the node to be visited by a Visitor.
 type Node interface {
 	Accept(Visitor) error
 }
@@ -162,6 +164,8 @@ func (v *VarStmt) Accept(visitor Visitor) error {
 	return visitor.VisitVarStmt(v)
 }
 
+// Visitor is an interface that must be implemented by any object that wishes to
+// be applied to the AST.
 type Visitor interface {
 	VisitIfStmt(i *IfStmt) error
 	VisitBlock(b *Block) error
