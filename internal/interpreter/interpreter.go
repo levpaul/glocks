@@ -23,6 +23,7 @@ func New(log *zap.SugaredLogger) *Interpreter {
 		replMode:   false,
 		globals:    globals,
 		env:        globals, // Set initial env to Global
+		r:          resolver.NewResolver(),
 	}
 }
 
@@ -81,7 +82,9 @@ func (i *Interpreter) run(code string) error {
 	}
 
 	// Invoke resolver on the AST to resolve variable names to their scope
-	i.r = &resolver.Resolver{Scopes: []resolver.Scope{}}
+	if i.r == nil {
+		i.r = resolver.NewResolver()
+	}
 	err = i.r.ResolveNodes(stmts)
 	if err != nil {
 		return fmt.Errorf("static analysis [resolver] FAILURE, err='%w'", err)

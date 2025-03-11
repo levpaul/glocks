@@ -28,6 +28,14 @@ type Resolver struct {
 	locals map[parser.Node]int
 }
 
+func NewResolver() *Resolver {
+	return &Resolver{
+		Scopes:          []Scope{{}},
+		currentFunction: FT_NONE,
+		locals:          make(map[parser.Node]int),
+	}
+}
+
 // resolve resolves a single node by calling Accept on the node, which in turn calls the appropriate Visit method
 // of the passed Node
 func (r *Resolver) resolve(node parser.Node) error {
