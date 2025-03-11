@@ -452,6 +452,9 @@ func (p *Parser) equality() (Node, error) {
 	if err != nil {
 		return nil, err
 	}
+	if p.isAtEnd() {
+		return res, nil
+	}
 	for cur := p.tokens[p.current]; p.match(lexer.BANG_EQUAL, lexer.EQUAL_EQUAL); {
 		right, err := p.comparison()
 		if err != nil {
@@ -473,6 +476,9 @@ func (p *Parser) comparison() (Node, error) {
 	if err != nil {
 		return nil, err
 	}
+	if p.isAtEnd() {
+		return res, nil
+	}
 	for cur := p.tokens[p.current]; p.match(lexer.LESS, lexer.LESS_EQUAL, lexer.GREATER, lexer.GREATER_EQUAL); {
 		right, err := p.term()
 		if err != nil {
@@ -493,6 +499,9 @@ func (p *Parser) term() (Node, error) {
 	if err != nil {
 		return nil, err
 	}
+	if p.isAtEnd() {
+		return res, nil
+	}
 	for cur := p.tokens[p.current]; p.match(lexer.MINUS, lexer.PLUS); {
 		right, err := p.factor()
 		if err != nil {
@@ -512,6 +521,9 @@ func (p *Parser) factor() (Node, error) {
 	res, err := p.unary()
 	if err != nil {
 		return nil, err
+	}
+	if p.isAtEnd() {
+		return res, nil
 	}
 	for cur := p.tokens[p.current]; p.match(lexer.SLASH, lexer.STAR); {
 		right, err := p.unary()
