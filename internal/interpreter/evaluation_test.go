@@ -18,15 +18,13 @@ func BenchmarkValidateThenCast(b *testing.B) {
 	nop(res)
 }
 
-func nop(a any) {
-	return
-}
+func nop(a any) {}
 
 func BenchmarkValidateNumber(b *testing.B) {
 	v1 := 45
 	v2 := "45"
 	e := Interpreter{}
 	for i := 0; i < b.N; i++ {
-		e.validateBothNumber(v1, v2)
+		_ = e.validateBothNumber(v1, v2)
 	}
 }

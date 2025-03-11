@@ -562,24 +562,26 @@ func (p *Parser) call() (Node, error) {
 	}
 
 	for {
+		// If we find a left parenthesis, we're parsing a function call
 		if p.match(lexer.LEFT_PAREN) {
 			expr, err = p.finishCall(expr)
 			if err != nil {
 				return nil, err
 			}
-		} else if p.match(lexer.DOT) {
+		} else if p.match(lexer.DOT) { // If it's a dot, we're parsing a "get expression"
 			name, err := p.consume(lexer.IDENTIFIER)
 			if err != nil {
 				return nil, fmt.Errorf("expected identifier after '.' in call expression; err=%w", err)
 			}
 			expr = &GetExpr{Instance: expr, Name: name}
-		} else {
+		} else { // Otherwise, we've reached the end of the call expression
 			return expr, nil
 		}
 	}
 }
 
-// finishCall will finish parsing a function call expression
+// finishCall will finish parsing a function call expression, passed in a callee, which
+// should be a primary expression (e.g. IDENTIFIER, NUMBER, STRING, etc.)
 func (p *Parser) finishCall(callee Node) (Node, error) {
 	var args []Node
 	if !p.match(lexer.RIGHT_PAREN) {

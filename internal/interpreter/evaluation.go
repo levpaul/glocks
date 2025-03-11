@@ -51,18 +51,18 @@ func (i *Interpreter) VisitFunctionDeclaration(f *parser.FunctionDeclaration) er
 }
 
 func (i *Interpreter) VisitGetExpr(g *parser.GetExpr) error {
-	instance, err := i.Evaluate(g.Instance)
+	classInstance, err := i.Evaluate(g.Instance)
 	if err != nil {
 		return err
 	}
 
-	if instance == nil {
+	if classInstance == nil {
 		return fmt.Errorf("Attempted to get property '%s' from a nil instance", g.Name.Lexeme)
 	}
 
-	loxInstance, ok := instance.(LoxInstance)
+	loxInstance, ok := classInstance.(LoxInstance)
 	if !ok {
-		return fmt.Errorf("Expected instance of type LoxInstance, but got '%v'", instance)
+		return fmt.Errorf("Expected instance of type LoxInstance, but got '%v'", classInstance)
 	}
 
 	i.evalRes, err = loxInstance.Get(g.Name.Lexeme)
@@ -187,20 +187,21 @@ func (i *Interpreter) VisitBlock(b *parser.Block) error {
 	return nil
 }
 
+// VisitAssignment sets the value of a variable in the environment
 func (i *Interpreter) VisitAssignment(a *parser.Assignment) error {
 	v, err := i.Evaluate(a.Value)
 	if err != nil {
 		return err
 	}
 
-	if dist, exists := i.locals[a]; exists {
+	// Check if the variable is a local variable, if so set it in the local environment
+	// otherwise set it in the global environment
+	if dist, err := i.r.GetLocal(a); err == nil {
 		if err = i.env.SetAt(dist, a.TokenName, v); err != nil {
 			return err
 		}
-	} else {
-		if err = i.globals.Set(a.TokenName, v); err != nil {
-			return err
-		}
+	} else if err = i.globals.Set(a.TokenName, v); err != nil {
+		return err
 	}
 	i.evalRes = v
 	return nil
