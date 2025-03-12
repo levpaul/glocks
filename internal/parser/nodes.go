@@ -6,6 +6,8 @@ import (
 	"github.com/levpaul/glocks/internal/lexer"
 )
 
+// GetExpr is a node that represents a get expression - that is a dot expression
+// that gets a property from an instance of a class.
 type GetExpr struct {
 	Instance Node
 	Name     *lexer.Token
@@ -15,6 +17,7 @@ func (g *GetExpr) Accept(v Visitor) error {
 	return v.VisitGetExpr(g)
 }
 
+// ClassDeclaration is a node that represents a class declaration.
 type ClassDeclaration struct {
 	Name    string
 	Methods []Node
