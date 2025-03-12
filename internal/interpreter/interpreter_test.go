@@ -94,6 +94,12 @@ func TestSimpleWhileLoop(t *testing.T) {
 	testSimpleProgramWorksWithOutput(t, program, expectedOut)
 }
 
+func TestSimpleScope(t *testing.T) {
+	program := `var a = 10; { print a; var a = 20; print a; }`
+	expectedOut := "10\n20"
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}
+
 func TestSimpleForLoop(t *testing.T) {
 	program := `for (var i = 1; i <= 5; i = i + 1 ){ print i; }`
 	expectedOut := "1\n2\n3\n4\n5"

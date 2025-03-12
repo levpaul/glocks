@@ -195,14 +195,6 @@ func (s *Scanner) peek() rune {
 	return rune(s.source[s.current])
 }
 
-// Returns rune from source at current index + 1, without advancing the index
-func (s *Scanner) peekNext() rune {
-	if s.current+1 >= len(s.source) {
-		return 0
-	}
-	return rune(s.source[s.current+1])
-}
-
 // match retuns a bool based on whether the next character in the source matches the given r.
 // In case a match is found, the scanner is advanced by one.
 func (s *Scanner) match(r rune) bool {

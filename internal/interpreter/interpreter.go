@@ -83,6 +83,7 @@ func (i *Interpreter) run(code string) error {
 
 	// Invoke resolver on the AST to resolve variable names to their scope
 	if i.r == nil {
+		fmt.Printf("Creating new resolver\n")
 		i.r = resolver.NewResolver()
 	}
 	err = i.r.ResolveNodes(stmts)
@@ -120,7 +121,7 @@ func (i *Interpreter) ExecuteBlock(block *parser.Block, env *environment.Environ
 }
 
 func (i *Interpreter) lookUpVariable(name string, node parser.Node) (domain.Value, error) {
-	if distance, err := i.r.GetLocal(node); err != nil {
+	if distance, err := i.r.GetLocal(node); err == nil {
 		return i.env.GetAt(distance, name)
 	}
 

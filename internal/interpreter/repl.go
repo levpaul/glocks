@@ -42,6 +42,4 @@ func (i *Interpreter) REPL() error {
 			}
 		}
 	}
-
-	return nil
 }

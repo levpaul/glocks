@@ -22,7 +22,9 @@ type Scope map[string]bool
 // Resolver is responsible for resolving variable names to their scope. It walks the entire AST
 // before execution to resolve variable names to their scope.
 type Resolver struct {
-	Scopes          []Scope
+	// Scopes is a stack of scopes, with the current scope being the top of the stack
+	Scopes []Scope
+	// currentFunction is the type of function that is currently being resolved
 	currentFunction FunctionType
 	// locals is a map of nodes to their depth in the scope chain
 	locals map[parser.Node]int
@@ -68,7 +70,7 @@ func (r *Resolver) endScope() error {
 	return nil
 }
 
-// dec
+// declare declares a variable in the current scope, but does not define it
 func (r *Resolver) declare(name string) {
 	if len(r.Scopes) == 0 {
 		return
@@ -77,6 +79,7 @@ func (r *Resolver) declare(name string) {
 	r.Scopes[0][name] = false
 }
 
+// define defines a variable in the current scope marking it as true in the scope map
 func (r *Resolver) define(name string) {
 	if len(r.Scopes) == 0 {
 		return

@@ -21,20 +21,17 @@ func (r *Resolver) VisitIfStmt(i *parser.IfStmt) error {
 }
 
 func (r *Resolver) VisitBlock(b *parser.Block) error {
-	err := r.beginScope()
-	if err != nil {
+	if err := r.beginScope(); err != nil {
 		return err
 	}
-	err = r.ResolveNodes(b.Statements)
-	if err != nil {
+	if err := r.ResolveNodes(b.Statements); err != nil {
 		return err
 	}
 	return r.endScope()
 }
 
 func (r *Resolver) VisitBinary(b *parser.Binary) error {
-	err := r.resolve(b.Left)
-	if err != nil {
+	if err := r.resolve(b.Left); err != nil {
 		return err
 	}
 	return r.resolve(b.Right)
@@ -54,7 +51,7 @@ func (r *Resolver) VisitUnary(u *parser.Unary) error {
 
 func (r *Resolver) VisitVariable(v *parser.Variable) error {
 	if len(r.Scopes) > 0 {
-		if defined, exists := r.Scopes[0][v.TokenName]; exists && !defined {
+		if defined, declared := r.Scopes[0][v.TokenName]; declared && !defined {
 			return fmt.Errorf("can't read local variable '%s' in its own initializer", v.TokenName)
 		}
 	}
@@ -66,6 +63,9 @@ func (r *Resolver) VisitPrintStmt(p *parser.PrintStmt) error {
 	return r.resolve(p.Arg)
 }
 
+// VisitVarStmt declares a variable in the current scope, and optionally initializes it
+// with an expression. The resolver will check that the variable is not already declared in
+// the current scope.
 func (r *Resolver) VisitVarStmt(v *parser.VarStmt) error {
 	if len(r.Scopes) > 0 {
 		if _, exists := r.Scopes[0][v.Name]; exists {
