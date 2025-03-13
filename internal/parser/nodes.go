@@ -6,6 +6,16 @@ import (
 	"github.com/levpaul/glocks/internal/lexer"
 )
 
+type SetExpr struct {
+	Instance Node
+	Name     *lexer.Token
+	Value    Node
+}
+
+func (s *SetExpr) Accept(v Visitor) error {
+	return v.VisitSetExpr(s)
+}
+
 // GetExpr is a node that represents a get expression - that is a dot expression
 // that gets a property from an instance of a class.
 type GetExpr struct {
@@ -187,6 +197,7 @@ type Visitor interface {
 	VisitReturnStmt(r *ReturnStmt) error
 	VisitClassDeclaration(c *ClassDeclaration) error
 	VisitGetExpr(g *GetExpr) error
+	VisitSetExpr(s *SetExpr) error
 }
 
 type LoxInterpreter interface {

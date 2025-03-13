@@ -9,6 +9,11 @@ type ExprPrinter struct {
 	res string
 }
 
+// VisitSetExpr implements Visitor.
+func (e *ExprPrinter) VisitSetExpr(s *SetExpr) error {
+	return reflectPrint(s)
+}
+
 func reflectPrint(i interface{}) error {
 	fmt.Printf("%+v\n", i)
 	return nil

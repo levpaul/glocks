@@ -133,3 +133,13 @@ func (r *Resolver) GetLocal(node parser.Node) (int, error) {
 	}
 	return 0, errors.New("could not find local variable")
 }
+
+func (r *Resolver) VisitSetExpr(s *parser.SetExpr) error {
+	if err := r.resolve(s.Instance); err != nil {
+		return err
+	}
+	if err := r.resolve(s.Value); err != nil {
+		return err
+	}
+	return nil
+}

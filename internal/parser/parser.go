@@ -390,8 +390,8 @@ func (p *Parser) expressionStmt() (Node, error) {
 	return p.assignment()
 }
 
-// assignment -> IDENTIFIER = assignment
-// _____________ | equality
+// assignment -> ( call "." )? IDENTIFIER "=" assignment
+// | logicalConjunction
 func (p *Parser) assignment() (Node, error) {
 	expr, err := p.logicalConjunction()
 	if err != nil {
@@ -404,20 +404,27 @@ func (p *Parser) assignment() (Node, error) {
 		return expr, nil
 	}
 
-	v, ok := expr.(*Variable)
-	if !ok {
-		return nil, exprToken.GenerateTokenError("Expected variable for assignment but did not find")
-	}
-
 	rhs, err := p.assignment()
 	if err != nil {
 		return nil, err
 	}
 
-	return &Assignment{
-		TokenName: v.TokenName,
-		Value:     rhs,
-	}, nil
+	if v, ok := expr.(*Variable); ok {
+		return &Assignment{
+			TokenName: v.TokenName,
+			Value:     rhs,
+		}, nil
+	}
+
+	if g, ok := expr.(*GetExpr); ok {
+		return &SetExpr{
+			Instance: g.Instance,
+			Name:     g.Name,
+			Value:    rhs,
+		}, nil
+	}
+
+	return nil, exprToken.GenerateTokenError("Expected variable for assignment but did not find")
 }
 
 // logicalConjunction parses out "and" or "or" operators, using the same precedence for each - this

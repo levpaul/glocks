@@ -406,3 +406,24 @@ func (i *Interpreter) validateBothString(left domain.Value, right domain.Value) 
 	}
 	return nil
 }
+
+func (i *Interpreter) VisitSetExpr(s *parser.SetExpr) error {
+	instanceRes, err := i.Evaluate(s.Instance)
+	if err != nil {
+		return err
+	}
+
+	instance, ok := instanceRes.(LoxInstance)
+	if !ok {
+		return fmt.Errorf("Expected instance of type LoxInstance, but got '%v'", instanceRes)
+	}
+
+	evalResult, err := i.Evaluate(s.Value)
+	if err != nil {
+		return err
+	}
+
+	instance.Set(s.Name.Lexeme, evalResult)
+
+	return nil
+}

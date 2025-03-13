@@ -42,3 +42,7 @@ func (l LoxInstance) Get(name string) (domain.Value, error) {
 	}
 	return nil, fmt.Errorf("Undefined property '%s' on instance of class '%s'", name, l.klass.Name)
 }
+
+func (l LoxInstance) Set(name string, value domain.Value) {
+	l.fields[name] = value
+}
