@@ -28,7 +28,8 @@ func (l LoxClass) Arity() int {
 
 type LoxInstance struct {
 	// functions []LoxFunction
-	klass LoxClass
+	klass  LoxClass
+	fields map[string]domain.Value
 }
 
 func (l LoxInstance) String() string {
@@ -36,5 +37,8 @@ func (l LoxInstance) String() string {
 }
 
 func (l LoxInstance) Get(name string) (domain.Value, error) {
-	return nil, fmt.Errorf("Attempted to get property '%s' from a class instance, but no such property exists", name)
+	if val, exists := l.fields[name]; exists {
+		return val, nil
+	}
+	return nil, fmt.Errorf("Undefined property '%s' on instance of class '%s'", name, l.klass.Name)
 }

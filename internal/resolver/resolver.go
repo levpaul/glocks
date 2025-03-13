@@ -20,7 +20,11 @@ const (
 type Scope map[string]bool
 
 // Resolver is responsible for resolving variable names to their scope. It walks the entire AST
-// before execution to resolve variable names to their scope.
+// before execution to resolve variable names to do so. Essentially, it is a stack of scopes, which
+// correlates directly to the environment stack in the interpreter. The resolver analyzes each variable
+// declaration and assigns it a depth in the scope chain, which is used to resolve variables at runtime
+// by the evaluation component of the interpreter by using the distance to the variable's correct
+// scope/environment.
 type Resolver struct {
 	// Scopes is a stack of scopes, with the current scope being the top of the stack
 	Scopes []Scope

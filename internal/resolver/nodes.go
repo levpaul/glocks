@@ -138,7 +138,7 @@ func (r *Resolver) VisitReturnStmt(rs *parser.ReturnStmt) error {
 
 // VisitGetExpr implements parser.Visitor.
 func (r *Resolver) VisitGetExpr(g *parser.GetExpr) error {
-	return fmt.Errorf("unimplemented")
+	return r.resolve(g.Instance)
 }
 
 // VisitClassDeclaration declares and defines a class from a ClassDeclaration node

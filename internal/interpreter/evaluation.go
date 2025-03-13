@@ -51,18 +51,18 @@ func (i *Interpreter) VisitFunctionDeclaration(f *parser.FunctionDeclaration) er
 }
 
 func (i *Interpreter) VisitGetExpr(g *parser.GetExpr) error {
-	classInstance, err := i.Evaluate(g.Instance)
+	evalResult, err := i.Evaluate(g.Instance)
 	if err != nil {
 		return err
 	}
 
-	if classInstance == nil {
+	if evalResult == nil {
 		return fmt.Errorf("Attempted to get property '%s' from a nil instance", g.Name.Lexeme)
 	}
 
-	loxInstance, ok := classInstance.(LoxInstance)
+	loxInstance, ok := evalResult.(LoxInstance)
 	if !ok {
-		return fmt.Errorf("Expected instance of type LoxInstance, but got '%v'", classInstance)
+		return fmt.Errorf("Properties can only be called on Class instances. Not on '%v'", evalResult)
 	}
 
 	i.evalRes, err = loxInstance.Get(g.Name.Lexeme)
