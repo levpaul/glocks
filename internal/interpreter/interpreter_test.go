@@ -111,6 +111,17 @@ func TestFibonacciFor(t *testing.T) {
 	testSimpleProgramWorksWithOutput(t, program, expectedOut)
 }
 
+func TestClassInstanceField(t *testing.T) {
+	program := `class A {}
+var a = A();
+a.x = 1;
+print a.x;
+a.x = a.x + 2;
+print a.x;`
+	expectedOut := "1\n3"
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}
+
 func TestRecursiveFunction(t *testing.T) {
 	program := `
 fun count(n) {   

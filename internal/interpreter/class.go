@@ -13,7 +13,8 @@ type LoxClass struct {
 
 func (l LoxClass) Call(i parser.LoxInterpreter, args []domain.Value) (domain.Value, error) {
 	instance := LoxInstance{
-		klass: l,
+		klass:  l,
+		fields: map[string]domain.Value{},
 	}
 	return instance, nil
 }
