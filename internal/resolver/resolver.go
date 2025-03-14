@@ -14,6 +14,7 @@ type FunctionType int
 const (
 	FT_NONE FunctionType = iota
 	FT_FUNCTION
+	FT_METHOD
 )
 
 // Scope is a map of variable names to whether they have been defined or not

@@ -8,7 +8,8 @@ import (
 )
 
 type LoxClass struct {
-	Name string
+	Name    string
+	Methods map[string]LoxFunction
 }
 
 func (l LoxClass) Call(i parser.LoxInterpreter, args []domain.Value) (domain.Value, error) {

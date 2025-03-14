@@ -145,5 +145,15 @@ func (r *Resolver) VisitGetExpr(g *parser.GetExpr) error {
 func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 	r.declare(c.Name)
 	r.define(c.Name)
+
+	for _, method := range c.Methods {
+		fd, ok := method.(*parser.FunctionDeclaration)
+		if !ok {
+			return fmt.Errorf("expected function declaration, but got '%v'", method)
+		}
+		if err := r.resolveFunction(fd, FT_METHOD); err != nil {
+			return err
+		}
+	}
 	return nil
 }

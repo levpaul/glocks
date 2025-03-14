@@ -21,8 +21,20 @@ func (e EarlyReturn) Error() string {
 }
 
 func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
+	methods := map[string]LoxFunction{}
+	for _, methodRaw := range c.Methods {
+		method, ok := methodRaw.(*parser.FunctionDeclaration)
+		if !ok {
+			return fmt.Errorf("expected function declaration, but got '%v'", methodRaw)
+		}
+		methods[method.Name] = LoxFunction{
+			declaration: method,
+			closure:     i.env, // TODO: should this be the global env?
+		}
+	}
 	klass := LoxClass{
-		Name: c.Name,
+		Name:    c.Name,
+		Methods: methods,
 	}
 	i.env.Define(c.Name, klass)
 	return nil
