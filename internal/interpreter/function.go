@@ -35,10 +35,12 @@ func (l LoxFunction) Call(i parser.LoxInterpreter, args []domain.Value) (domain.
 	return nil, blockErr
 }
 
+// Arity returns the number of parameters a function has.
 func (l LoxFunction) Arity() int {
 	return len(l.declaration.Params)
 }
 
+// String returns a string representation of the function.
 func (l LoxFunction) String() string {
 	return fmt.Sprintf("<fn %s>", l.declaration.Name)
 }
