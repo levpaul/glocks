@@ -20,6 +20,15 @@ func (e EarlyReturn) Error() string {
 	return fmt.Sprintf("Returned early from a function with value '%v'", e.result)
 }
 
+func (i *Interpreter) VisitThisExpr(t *parser.ThisExpr) error {
+	evalResult, err := i.lookUpVariable(t.Keyword.Lexeme, t)
+	if err != nil {
+		return err
+	}
+	i.evalRes = evalResult
+	return nil
+}
+
 func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 	methods := map[string]LoxFunction{}
 	for _, methodRaw := range c.Methods {
@@ -28,8 +37,9 @@ func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 			return fmt.Errorf("expected function declaration, but got '%v'", methodRaw)
 		}
 		methods[method.Name] = LoxFunction{
-			declaration: method,
-			closure:     i.env, // TODO: should this be the global env?
+			declaration:   method,
+			closure:       i.env,
+			isInitializer: method.Name == "init",
 		}
 	}
 	klass := LoxClass{
@@ -55,8 +65,9 @@ func (i *Interpreter) VisitReturnStmt(r *parser.ReturnStmt) error {
 
 func (i *Interpreter) VisitFunctionDeclaration(f *parser.FunctionDeclaration) error {
 	i.env.Define(f.Name, LoxFunction{
-		declaration: f,
-		closure:     i.env,
+		declaration:   f,
+		closure:       i.env,
+		isInitializer: false,
 	})
 	i.evalRes = nil
 	return nil

@@ -15,6 +15,14 @@ const (
 	FT_NONE FunctionType = iota
 	FT_FUNCTION
 	FT_METHOD
+	FT_INITIALIZER
+)
+
+type ClassType int
+
+const (
+	CT_NONE ClassType = iota
+	CT_CLASS
 )
 
 // Scope is a map of variable names to whether they have been defined or not
@@ -33,13 +41,16 @@ type Resolver struct {
 	currentFunction FunctionType
 	// locals is a map of nodes to their depth in the scope chain
 	locals map[parser.Node]int
+	// currentClass is the type of class that is currently being resolved, used for invalid uses of 'this'
+	currentClass ClassType
 }
 
 func NewResolver() *Resolver {
 	return &Resolver{
 		Scopes:          []Scope{{}},
-		currentFunction: FT_NONE,
 		locals:          make(map[parser.Node]int),
+		currentFunction: FT_NONE,
+		currentClass:    CT_NONE,
 	}
 }
 
@@ -133,14 +144,4 @@ func (r *Resolver) GetLocal(node parser.Node) (int, error) {
 		return depth, nil
 	}
 	return 0, errors.New("could not find local variable")
-}
-
-func (r *Resolver) VisitSetExpr(s *parser.SetExpr) error {
-	if err := r.resolve(s.Instance); err != nil {
-		return err
-	}
-	if err := r.resolve(s.Value); err != nil {
-		return err
-	}
-	return nil
 }

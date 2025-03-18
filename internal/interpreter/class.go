@@ -17,6 +17,13 @@ func (l LoxClass) Call(i parser.LoxInterpreter, args []domain.Value) (domain.Val
 		klass:  l,
 		fields: map[string]domain.Value{},
 	}
+	initializer, exists := l.Methods["init"]
+	if exists {
+		if _, err := initializer.Bind(instance).Call(i, args); err != nil {
+			return nil, err
+		}
+	}
+
 	return instance, nil
 }
 
@@ -25,6 +32,10 @@ func (l LoxClass) String() string {
 }
 
 func (l LoxClass) Arity() int {
+	initializer, exists := l.Methods["init"]
+	if exists {
+		return initializer.Arity()
+	}
 	return 0
 }
 
@@ -44,7 +55,7 @@ func (l LoxInstance) Get(name string) (domain.Value, error) {
 	}
 
 	if method, exists := l.klass.Methods[name]; exists {
-		return method, nil
+		return method.Bind(l), nil
 	}
 
 	return nil, fmt.Errorf("Undefined property '%s' on instance of class '%s'", name, l.klass.Name)

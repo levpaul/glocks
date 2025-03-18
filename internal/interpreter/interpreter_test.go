@@ -279,3 +279,42 @@ func TestClassInstanceMethod(t *testing.T) {
 	expectedOut := "Crunch crunch crunch!"
 	testSimpleProgramWorksWithOutput(t, program, expectedOut)
 }
+
+func TestClassThisUsage(t *testing.T) {
+	program := `class Cake {
+  taste() {
+    var adjective = "delicious";
+    print "The " + this.flavor + " cake is " + adjective + "!";
+  }
+}
+
+var cake = Cake();
+cake.flavor = "German chocolate";
+cake.taste(); // Prints "The German chocolate cake is delicious!".
+`
+	out, err := testSimpleProgram(program)
+	require.Nil(t, err)
+	assert.Equal(t, "The German chocolate cake is delicious!", out)
+}
+
+func TestClassInitializer(t *testing.T) {
+	program := `class Thing {
+  init(){
+    this.x = 45;
+  }
+}
+print Thing().x;`
+	expectedOut := "45"
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}
+
+func TestClassInitializerWithReturn(t *testing.T) {
+	program := `class Thing {
+		init() {
+			return;
+		}
+	}
+	print Thing();`
+	expectedOut := "Thing instance"
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}

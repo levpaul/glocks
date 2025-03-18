@@ -617,7 +617,7 @@ func (p *Parser) finishCall(callee Node) (Node, error) {
 	}, nil
 }
 
-// primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expressionStmt ")" | IDENTIFIER ;
+// primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expressionStmt ")" | IDENTIFIER | "this" ;
 func (p *Parser) primary() (Node, error) {
 	cur := p.tokens[p.current]
 
@@ -647,6 +647,9 @@ func (p *Parser) primary() (Node, error) {
 		return &Literal{Value: false}, nil
 	case lexer.NIL:
 		return &Literal{Value: nil}, nil
+
+	case lexer.THIS:
+		return &ThisExpr{Keyword: cur}, nil
 
 	case lexer.IDENTIFIER:
 		return &Variable{TokenName: cur.Lexeme}, nil

@@ -126,6 +126,9 @@ func (r *Resolver) VisitCallExpr(f *parser.CallExpr) error {
 func (r *Resolver) VisitFunctionDeclaration(f *parser.FunctionDeclaration) error {
 	r.declare(f.Name)
 	r.define(f.Name)
+	if f.Name == "init" {
+		return r.resolveFunction(f, FT_INITIALIZER)
+	}
 	return r.resolveFunction(f, FT_FUNCTION)
 }
 
@@ -133,7 +136,15 @@ func (r *Resolver) VisitReturnStmt(rs *parser.ReturnStmt) error {
 	if r.currentFunction == FT_NONE {
 		return errors.New("detected return statement from global scope - not allowed")
 	}
-	return r.resolve(rs.Expression)
+	if r.currentFunction == FT_INITIALIZER {
+		if rs.Expression != nil {
+			return fmt.Errorf("can't return a value from the initializer")
+		}
+	}
+	if rs.Expression != nil {
+		return r.resolve(rs.Expression)
+	}
+	return nil
 }
 
 // VisitGetExpr implements parser.Visitor.
@@ -145,15 +156,44 @@ func (r *Resolver) VisitGetExpr(g *parser.GetExpr) error {
 func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 	r.declare(c.Name)
 	r.define(c.Name)
+	r.currentClass = CT_CLASS
+	defer func() { r.currentClass = CT_NONE }()
+	if err := r.beginScope(); err != nil {
+		return err
+	}
+	r.Scopes[0]["this"] = true
 
 	for _, method := range c.Methods {
 		fd, ok := method.(*parser.FunctionDeclaration)
 		if !ok {
 			return fmt.Errorf("expected function declaration, but got '%v'", method)
 		}
-		if err := r.resolveFunction(fd, FT_METHOD); err != nil {
+		ft := FT_METHOD
+		if fd.Name == "init" {
+			ft = FT_INITIALIZER
+		}
+		if err := r.resolveFunction(fd, ft); err != nil {
 			return err
 		}
 	}
+
+	return r.endScope()
+}
+
+func (r *Resolver) VisitSetExpr(s *parser.SetExpr) error {
+	if err := r.resolve(s.Instance); err != nil {
+		return err
+	}
+	if err := r.resolve(s.Value); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Resolver) VisitThisExpr(t *parser.ThisExpr) error {
+	if r.currentClass != CT_CLASS {
+		return fmt.Errorf("'this' cannot be used outside of a class")
+	}
+	r.resolveLocal(t, t.Keyword.Lexeme)
 	return nil
 }
