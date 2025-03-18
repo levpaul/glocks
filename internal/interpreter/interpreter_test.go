@@ -268,3 +268,14 @@ func TestReturnFromGlobalScope(t *testing.T) {
 	require.ErrorContains(t, err, "detected return statement from global scope - not allowed")
 	require.Empty(t, out)
 }
+
+func TestClassInstanceMethod(t *testing.T) {
+	program := `class Bacon {
+		eat() {
+			print "Crunch crunch crunch!";
+		}
+	}
+	Bacon().eat();`
+	expectedOut := "Crunch crunch crunch!"
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}

@@ -42,6 +42,11 @@ func (l LoxInstance) Get(name string) (domain.Value, error) {
 	if val, exists := l.fields[name]; exists {
 		return val, nil
 	}
+
+	if method, exists := l.klass.Methods[name]; exists {
+		return method, nil
+	}
+
 	return nil, fmt.Errorf("Undefined property '%s' on instance of class '%s'", name, l.klass.Name)
 }
 
