@@ -30,6 +30,19 @@ func (i *Interpreter) VisitThisExpr(t *parser.ThisExpr) error {
 }
 
 func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
+	var superClass LoxClass
+	if c.SuperClass != nil {
+		superClass, err := i.Evaluate(c.SuperClass)
+		if err != nil {
+			return err
+		}
+		sc, ok := superClass.(LoxClass)
+		if !ok {
+			return fmt.Errorf("superclass must be a class, but got '%v'", superClass)
+		}
+		superClass = sc
+	}
+
 	methods := map[string]LoxFunction{}
 	for _, methodRaw := range c.Methods {
 		method, ok := methodRaw.(*parser.FunctionDeclaration)
@@ -43,8 +56,9 @@ func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 		}
 	}
 	klass := LoxClass{
-		Name:    c.Name,
-		Methods: methods,
+		Name:       c.Name,
+		Methods:    methods,
+		SuperClass: superClass,
 	}
 	i.env.Define(c.Name, klass)
 	return nil

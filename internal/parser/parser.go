@@ -62,11 +62,20 @@ func (p *Parser) declaration() (s Node, err error) {
 	return p.statement()
 }
 
-// classDecl → "class" IDENTIFIER "{" function* "}" ;
+// classDecl → "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}" ;
 func (p *Parser) classDeclaration() (Node, error) {
 	name, err := p.consume(lexer.IDENTIFIER)
 	if err != nil {
 		return nil, fmt.Errorf("expected class name")
+	}
+
+	var superClass *Variable
+	if p.match(lexer.LESS) {
+		t, err := p.consume(lexer.IDENTIFIER)
+		if err != nil {
+			return nil, fmt.Errorf("expected superclass name")
+		}
+		superClass = &Variable{TokenName: t.Lexeme}
 	}
 
 	_, err = p.consume(lexer.LEFT_BRACE)
@@ -92,8 +101,9 @@ func (p *Parser) classDeclaration() (Node, error) {
 		return nil, fmt.Errorf("expected a '}' after a class body")
 	}
 	return &ClassDeclaration{
-		Name:    name.Lexeme,
-		Methods: methods,
+		Name:       name.Lexeme,
+		Methods:    methods,
+		SuperClass: superClass,
 	}, nil
 }
 

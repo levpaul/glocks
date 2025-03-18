@@ -37,8 +37,9 @@ func (g *GetExpr) Accept(v Visitor) error {
 
 // ClassDeclaration is a node that represents a class declaration.
 type ClassDeclaration struct {
-	Name    string
-	Methods []Node
+	Name       string
+	Methods    []Node
+	SuperClass *Variable
 }
 
 func (c *ClassDeclaration) Accept(v Visitor) error {

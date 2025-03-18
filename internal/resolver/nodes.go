@@ -156,6 +156,16 @@ func (r *Resolver) VisitGetExpr(g *parser.GetExpr) error {
 func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 	r.declare(c.Name)
 	r.define(c.Name)
+
+	if c.SuperClass != nil {
+		if c.SuperClass.TokenName == c.Name {
+			return fmt.Errorf("a class can't inherit from itself")
+		}
+		if err := r.resolve(c.SuperClass); err != nil {
+			return err
+		}
+	}
+
 	r.currentClass = CT_CLASS
 	defer func() { r.currentClass = CT_NONE }()
 	if err := r.beginScope(); err != nil {
