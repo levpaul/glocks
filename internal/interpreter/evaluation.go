@@ -63,6 +63,11 @@ func (i *Interpreter) VisitThisExpr(t *parser.ThisExpr) error {
 }
 
 func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
+	klass := LoxClass{
+		Name: c.Name,
+	}
+	i.env.Define(c.Name, klass)
+
 	var superClass LoxClass
 	if c.SuperClass != nil {
 		scEvalRes, err := i.Evaluate(c.SuperClass)
@@ -94,12 +99,9 @@ func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 			isInitializer: method.Name == "init",
 		}
 	}
-	klass := LoxClass{
-		Name:       c.Name,
-		Methods:    methods,
-		SuperClass: superClass,
-	}
-	i.env.Define(c.Name, klass)
+
+	klass.Methods = methods
+	klass.SuperClass = superClass
 
 	return nil
 }

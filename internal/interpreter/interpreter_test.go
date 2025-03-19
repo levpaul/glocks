@@ -356,3 +356,17 @@ C().test();`
 	expectedOut := "A method"
 	testSimpleProgramWorksWithOutput(t, program, expectedOut)
 }
+
+func TestSuperUsageWithClass(t *testing.T) {
+	program := `class Doughnut {
+  cook() {
+    print "Fry until golden brown.";
+  }
+}
+
+class BostonCream < Doughnut {}
+
+BostonCream().cook;`
+	expectedOut := "Fry until golden brown."
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}

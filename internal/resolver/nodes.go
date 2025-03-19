@@ -168,8 +168,8 @@ func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 		if err := r.beginScope(); err != nil {
 			return err
 		}
-		r.Scopes[0]["super"] = true
 		defer r.endScope()
+		r.Scopes[0]["super"] = true
 	}
 
 	r.currentClass = CT_CLASS
@@ -177,6 +177,7 @@ func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 	if err := r.beginScope(); err != nil {
 		return err
 	}
+	defer r.endScope()
 	r.Scopes[0]["this"] = true
 
 	for _, method := range c.Methods {
@@ -193,7 +194,7 @@ func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 		}
 	}
 
-	return r.endScope()
+	return nil
 }
 
 func (r *Resolver) VisitSetExpr(s *parser.SetExpr) error {
