@@ -9,6 +9,10 @@ type ExprPrinter struct {
 	res string
 }
 
+func (e *ExprPrinter) VisitSuperExpr(s *SuperExpr) error {
+	return reflectPrint(s)
+}
+
 func (e *ExprPrinter) VisitThisExpr(t *ThisExpr) error {
 	return reflectPrint(t)
 }

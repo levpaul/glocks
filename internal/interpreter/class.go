@@ -55,11 +55,28 @@ func (l LoxInstance) Get(name string) (domain.Value, error) {
 		return val, nil
 	}
 
-	if method, exists := l.klass.Methods[name]; exists {
-		return method.Bind(l), nil
+	method, err := l.klass.findMethod(name)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("Undefined property '%s' on instance of class '%s'", name, l.klass.Name)
+	return method.Bind(l), nil
+}
+
+func (l LoxClass) findMethod(name string) (LoxFunction, error) {
+	if method, exists := l.Methods[name]; exists {
+		return method, nil
+	}
+
+	if l.SuperClass != nil {
+		superclass, ok := l.SuperClass.(LoxClass)
+		if !ok {
+			return LoxFunction{}, fmt.Errorf("superclass must be a class, but got '%T'", l.SuperClass)
+		}
+		return superclass.findMethod(name)
+	}
+
+	return LoxFunction{}, fmt.Errorf("Undefined property '%s' on instance of class '%s'", name, l.Name)
 }
 
 func (l LoxInstance) Set(name string, value domain.Value) {

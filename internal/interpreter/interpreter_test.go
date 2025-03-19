@@ -318,3 +318,41 @@ func TestClassInitializerWithReturn(t *testing.T) {
 	expectedOut := "Thing instance"
 	testSimpleProgramWorksWithOutput(t, program, expectedOut)
 }
+
+func TestClassInheritance(t *testing.T) {
+	program := `class Doughnut {
+  cook() {
+    print "Fry until golden brown.";
+  }
+}
+
+class BostonCream < Doughnut {}
+
+BostonCream().cook();`
+	expectedOut := "Fry until golden brown."
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}
+
+func TestSuperUsage(t *testing.T) {
+	program := `class A {
+  method() {
+    print "A method";
+  }
+}
+
+class B < A {
+  method() {
+    print "B method";
+  }
+
+  test() {
+    super.method();
+  }
+}
+
+class C < B {}
+
+C().test();`
+	expectedOut := "A method"
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}

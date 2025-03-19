@@ -20,6 +20,39 @@ func (e EarlyReturn) Error() string {
 	return fmt.Sprintf("Returned early from a function with value '%v'", e.result)
 }
 
+func (i *Interpreter) VisitSuperExpr(s *parser.SuperExpr) error {
+	distance, err := i.r.GetLocal(s)
+	if err != nil {
+		return err
+	}
+
+	superClass, err := i.env.GetAt(distance, "super")
+	if err != nil {
+		return err
+	}
+	superKlass, ok := superClass.(LoxClass)
+	if !ok {
+		return fmt.Errorf("superclass must be a class, but got '%v'", superClass)
+	}
+
+	object, err := i.env.GetAt(distance-1, "this")
+	if err != nil {
+		return err
+	}
+	instance, ok := object.(LoxInstance)
+	if !ok {
+		return fmt.Errorf("object must be an instance of a class, but got '%v'", object)
+	}
+
+	method, err := superKlass.findMethod(s.Method.Lexeme)
+	if err != nil {
+		return err
+	}
+
+	i.evalRes = method.Bind(instance)
+	return nil
+}
+
 func (i *Interpreter) VisitThisExpr(t *parser.ThisExpr) error {
 	evalResult, err := i.lookUpVariable(t.Keyword.Lexeme, t)
 	if err != nil {
@@ -32,15 +65,21 @@ func (i *Interpreter) VisitThisExpr(t *parser.ThisExpr) error {
 func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 	var superClass LoxClass
 	if c.SuperClass != nil {
-		superClass, err := i.Evaluate(c.SuperClass)
+		scEvalRes, err := i.Evaluate(c.SuperClass)
 		if err != nil {
 			return err
 		}
-		sc, ok := superClass.(LoxClass)
+		sc, ok := scEvalRes.(LoxClass)
 		if !ok {
-			return fmt.Errorf("superclass must be a class, but got '%v'", superClass)
+			return fmt.Errorf("superclass must be a class, but got '%v'", scEvalRes)
 		}
 		superClass = sc
+	}
+
+	if c.SuperClass != nil {
+		i.env = environment.NewEnvironment(i.env)
+		i.env.Define("super", superClass)
+		defer func() { i.env = i.env.Enclosing }()
 	}
 
 	methods := map[string]LoxFunction{}
@@ -61,6 +100,7 @@ func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 		SuperClass: superClass,
 	}
 	i.env.Define(c.Name, klass)
+
 	return nil
 }
 

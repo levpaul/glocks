@@ -35,6 +35,15 @@ func (g *GetExpr) Accept(v Visitor) error {
 	return v.VisitGetExpr(g)
 }
 
+type SuperExpr struct {
+	Keyword *lexer.Token
+	Method  *lexer.Token
+}
+
+func (s *SuperExpr) Accept(v Visitor) error {
+	return v.VisitSuperExpr(s)
+}
+
 // ClassDeclaration is a node that represents a class declaration.
 type ClassDeclaration struct {
 	Name       string
@@ -208,6 +217,7 @@ type Visitor interface {
 	VisitGetExpr(g *GetExpr) error
 	VisitSetExpr(s *SetExpr) error
 	VisitThisExpr(t *ThisExpr) error
+	VisitSuperExpr(s *SuperExpr) error
 }
 
 type LoxInterpreter interface {

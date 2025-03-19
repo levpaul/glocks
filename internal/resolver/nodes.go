@@ -164,6 +164,12 @@ func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 		if err := r.resolve(c.SuperClass); err != nil {
 			return err
 		}
+
+		if err := r.beginScope(); err != nil {
+			return err
+		}
+		r.Scopes[0]["super"] = true
+		defer r.endScope()
 	}
 
 	r.currentClass = CT_CLASS
@@ -197,6 +203,7 @@ func (r *Resolver) VisitSetExpr(s *parser.SetExpr) error {
 	if err := r.resolve(s.Value); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -205,5 +212,13 @@ func (r *Resolver) VisitThisExpr(t *parser.ThisExpr) error {
 		return fmt.Errorf("'this' cannot be used outside of a class")
 	}
 	r.resolveLocal(t, t.Keyword.Lexeme)
+	return nil
+}
+
+func (r *Resolver) VisitSuperExpr(s *parser.SuperExpr) error {
+	if r.currentClass == CT_NONE {
+		return fmt.Errorf("'super' cannot be used outside of a class")
+	}
+	r.resolveLocal(s, s.Keyword.Lexeme)
 	return nil
 }

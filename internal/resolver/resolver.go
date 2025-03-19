@@ -143,5 +143,5 @@ func (r *Resolver) GetLocal(node parser.Node) (int, error) {
 	if depth, exists := r.locals[node]; exists {
 		return depth, nil
 	}
-	return 0, errors.New("could not find local variable")
+	return 0, fmt.Errorf("could not find local variable for node %v", node)
 }

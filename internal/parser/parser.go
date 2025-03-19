@@ -627,7 +627,7 @@ func (p *Parser) finishCall(callee Node) (Node, error) {
 	}, nil
 }
 
-// primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expressionStmt ")" | IDENTIFIER | "this" ;
+// primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expressionStmt ")" | IDENTIFIER | "this" | "super" . IDENTIFIER ;
 func (p *Parser) primary() (Node, error) {
 	cur := p.tokens[p.current]
 
@@ -660,6 +660,17 @@ func (p *Parser) primary() (Node, error) {
 
 	case lexer.THIS:
 		return &ThisExpr{Keyword: cur}, nil
+	case lexer.SUPER:
+		s := &SuperExpr{Keyword: cur}
+		if !p.match(lexer.DOT) {
+			return nil, cur.GenerateTokenError("Expected '.' after 'super'")
+		}
+		name, err := p.consume(lexer.IDENTIFIER)
+		if err != nil {
+			return nil, err
+		}
+		s.Method = name
+		return s, nil
 
 	case lexer.IDENTIFIER:
 		return &Variable{TokenName: cur.Lexeme}, nil
