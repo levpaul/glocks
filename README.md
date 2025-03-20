@@ -1,6 +1,6 @@
 ### GLOCKS - A Go implementation of [Lox](https://craftinginterpreters.com/the-lox-language.html)
 
-This is an attempt to implement the Lox language, defined by Robert Nystrom, in his book [Crafting Interpreters](https://craftinginterpreters.com). It's current a work in progress and no guarantees of correctness are claimed.
+This is an implementation of the Lox language, defined by Robert Nystrom, in his book [Crafting Interpreters](https://craftinginterpreters.com). It is complete, though no guarantees of correctness are claimed!
 
 #### Running Glocks
 
@@ -32,4 +32,4 @@ There are unit and acceptance tests throughout the codebase. Run `go test ./...`
 
 #### Development Activity
 
-I circle back to this project only sporadically, feel free to open an issue if you have any questions. Hopefully I'll finish the implementation some time in 2024.
+The implementation is done for the 12 chapters of the book. I'm not planning to add further features here, but who knows.
