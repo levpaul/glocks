@@ -23,6 +23,7 @@ type ClassType int
 const (
 	CT_NONE ClassType = iota
 	CT_CLASS
+	CT_SUBCLASS
 )
 
 // Scope is a map of variable names to whether they have been defined or not

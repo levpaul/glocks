@@ -366,7 +366,43 @@ func TestSuperUsageWithClass(t *testing.T) {
 
 class BostonCream < Doughnut {}
 
-BostonCream().cook;`
+BostonCream().cook();`
 	expectedOut := "Fry until golden brown."
 	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}
+
+func TestSuperUsageWithMultipleSuperClasses(t *testing.T) {
+	program := `class A {
+  method() {
+    print "A method";
+  }
+}
+
+class B < A {
+  method() {
+    print "B method";
+  }
+
+  test() {
+    super.method();
+  }
+}
+
+class C < B {}
+
+C().test();`
+	expectedOut := "A method"
+	testSimpleProgramWorksWithOutput(t, program, expectedOut)
+}
+
+func TestSuperWithoutSuperClass(t *testing.T) {
+	program := `class Eclair {
+  cook() {
+    super.cook();
+    print "Pipe full of crème pâtissière.";
+  }
+}`
+	out, err := testSimpleProgram(program)
+	require.ErrorContains(t, err, "'super' can only be used in a subclass")
+	require.Empty(t, out)
 }

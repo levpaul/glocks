@@ -66,7 +66,6 @@ func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 	klass := LoxClass{
 		Name: c.Name,
 	}
-	i.env.Define(c.Name, klass)
 
 	var superClass LoxClass
 	if c.SuperClass != nil {
@@ -84,7 +83,6 @@ func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 	if c.SuperClass != nil {
 		i.env = environment.NewEnvironment(i.env)
 		i.env.Define("super", superClass)
-		defer func() { i.env = i.env.Enclosing }()
 	}
 
 	methods := map[string]LoxFunction{}
@@ -100,8 +98,13 @@ func (i *Interpreter) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 		}
 	}
 
+	if c.SuperClass != nil {
+		i.env = i.env.Enclosing // release the scope for super
+	}
+
 	klass.Methods = methods
 	klass.SuperClass = superClass
+	i.env.Define(c.Name, klass)
 
 	return nil
 }

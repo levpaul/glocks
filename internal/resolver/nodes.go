@@ -156,8 +156,11 @@ func (r *Resolver) VisitGetExpr(g *parser.GetExpr) error {
 func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 	r.declare(c.Name)
 	r.define(c.Name)
+	r.currentClass = CT_CLASS
+	defer func() { r.currentClass = CT_NONE }()
 
 	if c.SuperClass != nil {
+		r.currentClass = CT_SUBCLASS
 		if c.SuperClass.TokenName == c.Name {
 			return fmt.Errorf("a class can't inherit from itself")
 		}
@@ -172,8 +175,6 @@ func (r *Resolver) VisitClassDeclaration(c *parser.ClassDeclaration) error {
 		r.Scopes[0]["super"] = true
 	}
 
-	r.currentClass = CT_CLASS
-	defer func() { r.currentClass = CT_NONE }()
 	if err := r.beginScope(); err != nil {
 		return err
 	}
@@ -217,8 +218,8 @@ func (r *Resolver) VisitThisExpr(t *parser.ThisExpr) error {
 }
 
 func (r *Resolver) VisitSuperExpr(s *parser.SuperExpr) error {
-	if r.currentClass == CT_NONE {
-		return fmt.Errorf("'super' cannot be used outside of a class")
+	if r.currentClass != CT_SUBCLASS {
+		return fmt.Errorf("'super' can only be used in a subclass")
 	}
 	r.resolveLocal(s, s.Keyword.Lexeme)
 	return nil
